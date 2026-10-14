@@ -89,9 +89,9 @@ tr.pick{background:#eaf2ff}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90vw}
 #toast.on{opacity:1}
 .hide{display:none}
-.topr{position:absolute;top:16px;right:26px;display:flex;gap:12px;align-items:center;z-index:5}.brandr{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.15}.brandr b{font-size:17px;color:var(--navy);white-space:nowrap}.brandr span{display:inline-block;white-space:nowrap;color:var(--teal);font-weight:600}.sync{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line);background:#fff;border-radius:50%;cursor:pointer}#syncT{display:none}.day.c b,.day.c small{color:#b7791f}.day.off.c{background:repeating-linear-gradient(135deg,#fff8e6,#fff8e6 6px,#ffefc2 6px,#ffefc2 12px)}
-.sync .dot{width:9px;height:9px;border-radius:50%;background:#f5a800}
-.sync.ok .dot{background:#1fa35c}.sync.err .dot{background:var(--red)}.sync.err{color:var(--red);border-color:#f4a3b0}
+.topr{position:absolute;top:16px;right:26px;display:flex;gap:12px;align-items:center;z-index:5}.brandr{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.15}.brandr b{font-size:17px;color:var(--navy);white-space:nowrap}.brandr span{display:inline-block;white-space:nowrap;color:var(--teal);font-weight:600}.sync{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:7px 11px;border-radius:10px;background:#ffffff14;cursor:pointer}.sync .st{display:grid;line-height:1.25;min-width:0}.sync b{font-size:13px;white-space:nowrap}.sync small{font-size:11px;opacity:.75;white-space:nowrap}aside.min .sync{flex:none;padding:8px}.day.c b,.day.c small{color:#b7791f}.day.off.c{background:repeating-linear-gradient(135deg,#fff8e6,#fff8e6 6px,#ffefc2 6px,#ffefc2 12px)}
+.sync .dot{width:10px;height:10px;flex:none;border-radius:50%;background:#f5a800}
+.sync.ok .dot{background:#1fa35c}.sync.err .dot{background:var(--red)}.sync.err{color:#ffb4c0}
 .sync.busy .dot{animation:bl 1s infinite}@keyframes bl{50%{opacity:.25}}
 .hol{margin-top:12px;font-size:12.5px;color:var(--mut)}.hol b{color:var(--red)}
 .day.off.h{background:repeating-linear-gradient(135deg,#fff1f3,#fff1f3 6px,#ffe3e8 6px,#ffe3e8 12px)}
@@ -104,13 +104,13 @@ tr.pick{background:#eaf2ff}
 #pvw{margin:0 auto;box-shadow:0 2px 14px #0004;background:#fff}
 .sheet{position:relative;width:595px;height:842px;background:#fff;transform-origin:top left;font:10px/13px Arial,Helvetica,sans-serif;color:#000;overflow:hidden}
 .pvf{padding:8px 14px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}
-@media(max-width:900px){.grid,.charts,.tbls{grid-template-columns:1fr}main{padding:16px 12px}aside{width:66px}aside .lbl{display:none}aside .brand{flex-direction:column}#tg{display:none}nav button{justify-content:center}.day{min-height:46px}.topr{position:static;justify-content:flex-end;margin:0 0 10px}.day small{font-size:9px}}
+@media(max-width:900px){.grid,.charts,.tbls{grid-template-columns:1fr}main{padding:16px 12px}aside{width:66px}aside .lbl{display:none}aside .sync{flex:none;padding:8px}aside .sync .st{display:none}aside .brand{flex-direction:column}#tg{display:none}nav button{justify-content:center}.day{min-height:46px}.topr{position:static;justify-content:flex-end;margin:0 0 10px}.day small{font-size:9px}}
 </style>
 </head>
 <body>
 <div class="app">
 <aside id="sb">
-  <div class="brand"><div class="logo">ND</div><b class="lbl">Cuti Nusa Daya<br><small style="font-weight:400;opacity:.7">UL Papua</small></b><button id="tg" title="Ciutkan / lebarkan menu">‹</button></div>
+  <div class="brand"><div class="sync busy" id="sync" role="button" title="Klik untuk sinkron ulang"><span class="dot"></span><span class="lbl st"><b id="syncT">Proses sinkron…</b><small id="syncD">Mengambil data Google Sheet</small></span></div><button id="tg" title="Ciutkan / lebarkan menu">‹</button></div>
   <nav>
     <button data-v="in" class="on"><i>📝</i><span class="lbl">Input Pengajuan Cuti</span></button>
     <button data-v="mon"><i>📊</i><span class="lbl">Monitoring Cuti</span></button>
@@ -118,7 +118,7 @@ tr.pick{background:#eaf2ff}
 </aside>
 
 <main>
-<div class="topr"><div class="sync busy" id="sync" role="button" title="Klik untuk sinkron ulang"><span class="dot"></span><span id="syncT">Menyinkronkan…</span></div><div class="brandr"><b id="brT">Command Center - DCC</b><span id="brS">UIW Papua dan Papua Barat</span></div></div>
+<div class="topr"><div class="brandr"><b id="brT">Command Center - DCC</b><span id="brS">UIW Papua dan Papua Barat</span></div></div>
 <!-- ============ INPUT ============ -->
 <section id="v-in">
   <h1>Input Pengajuan Cuti</h1>
@@ -281,8 +281,9 @@ const gen=g=>{g=String(g||'').trim();return /^(p|f)$|perempuan|wanita|female|cew
 function parseRekap(d){return mapRows(d,SPEC_R).filter(x=>x.nama&&+x.jumlah>0).map(x=>({...x,jumlah:+x.jumlah,mulai:pd(x.mulai),selesai:pd(x.selesai),tglAjuan:pd(x.tglAjuan),remote:1}))}
 function setSync(st){
   const el=$('#sync');el.className='sync '+st;
-  const hm=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-  $('#syncT').textContent=st=='busy'?'Menyinkronkan…':st=='ok'?'Tersinkron '+hm.replace('.',':'):'Gagal sinkron';
+  const hm=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}).replace('.',':');
+  const T={busy:['Proses sinkron…','Mengambil data Google Sheet'],ok:['Tersinkron '+hm,'Terhubung ke Google Sheet'],err:[S.demo?'Gagal – data contoh':'Gagal sinkron',S.demo?'Data tenaga kerja belum terbaca':'Klik untuk coba lagi']}[st]||['Menunggu',''];
+  $('#syncT').textContent=T[0];$('#syncD').textContent=T[1];
   el.title=st=='ok'?'Terhubung ke Google Sheet ('+(S.ok||[]).join(', ')+'). Klik untuk sinkron ulang.':st=='err'?'Data tenaga_kerja belum terbaca. Pastikan sheet dibagikan “Anyone with the link – Viewer”. Klik untuk mencoba lagi.':'Mengambil data…';
 }
 async function syncRekap(){
