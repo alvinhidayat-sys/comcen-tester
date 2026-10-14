@@ -199,6 +199,7 @@ const SHEET_ID='1dG-Y4jeWtgzAuGFXvxAUl3zTn6nWNMiQPaSAGuuM3vg';
 const JATAH=12;
 const REKAP_GID='1393552530'; // tab rekap
 const TK_GID='0'; // tab tenaga_kerja
+const TTD_GID='1609963282'; // tab ttd_cuti (kolom: Unit, ttd_1, Unit_ttd_1, ttd_2, Unit_ttd_2, ttd_3, Unit_ttd_3, ttd-4, Unit_ttd_4)
 const APPS_URL='https://script.google.com/macros/s/AKfycbwDanh7gMtCFpdVEYCDQFnBC9MDlPBQ9QfECs51AcbMzFwL5pO31CSyXtd3lftXSZU-pA/exec'; // TEMPEL URL Web App Apps Script (…/exec) di antara tanda kutip ini
 // Libur nasional 2026 (SKB 3 Menteri) – tambahkan/ubah di sini bila perlu: 'YYYY-MM-DD':'nama'
 const HOL={'2026-01-01':'Tahun Baru','2026-01-16':'Isra Mi\'raj','2026-02-17':'Tahun Baru Imlek','2026-03-19':'Nyepi','2026-03-21':'Idulfitri','2026-03-22':'Idulfitri','2026-04-03':'Wafat Yesus Kristus','2026-04-05':'Paskah','2026-05-01':'Hari Buruh','2026-05-14':'Kenaikan Yesus Kristus','2026-05-27':'Iduladha','2026-05-31':'Waisak','2026-06-01':'Hari Lahir Pancasila','2026-06-16':'Tahun Baru Islam','2026-08-17':'Kemerdekaan RI','2026-08-25':'Maulid Nabi','2026-12-25':'Natal'};
@@ -274,15 +275,22 @@ function mapRows({h,rows},spec){
   return rows.map(r=>{const o={};for(const k in spec)o[k]=idx[k]>=0?String(r[idx[k]]??'').trim():'';return o});
 }
 const SPEC_P={nama:['nama','namapetugas','namalengkap','petugas','namapegawai'],noinduk:['noinduk','nip','induk','nik','noindukpegawai','noindukkaryawan'],jabatan:['jabatan'],divisi:['divisi','bagian','seksi'],unit:['unit','penempatan','lokasi','unitkerja'],shift:['shift','statusshift','polakerja','jeniskerja','jenis','status','kategori','jamkerja','shiftnonshift','statuskerja','kategorishift'],gender:['jeniskelamin','jk','gender','kelamin','lp','sex','lakilakiperempuan']};
-const SPEC_T={divisi:['divisi'],t1:['ttd1'],u1:['unitttd1'],t2:['ttd2'],u2:['unitttd2'],t3:['ttd3'],u3:['unitttd3'],t4:['ttd4'],u4:['unitttd4']};
+const SPEC_T={divisi:['unit','divisi','unitkerja','penempatan'],t1:['ttd1'],u1:['unitttd1'],t2:['ttd2'],u2:['unitttd2'],t3:['ttd3'],u3:['unitttd3'],t4:['ttd4'],u4:['unitttd4']};
 const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
 
 const gen=g=>{g=String(g||'').trim();return /^(p|f)$|perempuan|wanita|female|cewek/i.test(g)?'P':(/^(l|m)$|laki|pria|male|cowok/i.test(g)?'L':'')};
+// Baca tab ttd_cuti: cocokkan kolom lewat judul; bila judul tidak terbaca, pakai urutan kolom tetap (Unit, ttd_1, Unit_ttd_1, ... ttd-4, Unit_ttd_4)
+function parseTtd(b){
+  const idx={};b.h.forEach((x,i)=>{const n=N(x);for(const k in SPEC_T)if(SPEC_T[k].includes(n)&&!(k in idx))idx[k]=i});
+  let rows=b.rows;
+  if(Object.keys(idx).length<9){['divisi','t1','u1','t2','u2','t3','u3','t4','u4'].forEach((k,i)=>idx[k]=i);rows=rows.filter(r=>!/^unit$/i.test(String(r[0]||'').trim()))}
+  return rows.map(r=>{const o={};for(const k in idx)o[k]=String(r[idx[k]]??'').trim();return o}).filter(x=>x.divisi);
+}
 function parseRekap(d){return mapRows(d,SPEC_R).filter(x=>x.nama&&+x.jumlah>0).map(x=>({...x,jumlah:+x.jumlah,mulai:pd(x.mulai),selesai:pd(x.selesai),tglAjuan:pd(x.tglAjuan),remote:1}))}
 function setSync(st){
   const el=$('#sync');el.className='sync '+st;
   const hm=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}).replace('.',':');
-  const T={busy:['Proses sinkron…','Mengambil data Google Sheet'],ok:['Tersinkron '+hm,'Terhubung ke Google Sheet'],err:[S.demo?'Gagal – data contoh':'Gagal sinkron',S.demo?'Data tenaga kerja belum terbaca':'Klik untuk coba lagi']}[st]||['Menunggu',''];
+  const T={busy:['Proses sinkron…','Mengambil data Google Sheet'],ok:['Tersinkron '+hm,'Terhubung ke Google Sheet'+(S.ttdOk===false?' · TTD: data cadangan':'')],err:[S.demo?'Gagal – data contoh':'Gagal sinkron',S.demo?'Data tenaga kerja belum terbaca':'Klik untuk coba lagi']}[st]||['Menunggu',''];
   $('#syncT').textContent=T[0];$('#syncD').textContent=T[1];
   el.title=st=='ok'?'Terhubung ke Google Sheet ('+(S.ok||[]).join(', ')+'). Klik untuk sinkron ulang.':st=='err'?'Data tenaga_kerja belum terbaca. Pastikan sheet dibagikan “Anyone with the link – Viewer”. Klik untuk mencoba lagi.':'Mengambil data…';
 }
@@ -296,7 +304,7 @@ async function load(){
   setSync('busy');
   let ok=[];
   try{const a=await sheet('',TK_GID);const p=mapRows(a,SPEC_P).filter(x=>x.nama);if(p.length){S.people=p.map(x=>({...x,gender:gen(x.gender),pola:/non/i.test(x.shift)?'Nonshift':(/shift/i.test(x.shift)?'Shift':'')}));ok.push('tenaga_kerja')}}catch(e){}
-  try{const b=await sheet('ttd_cuti');const t=mapRows(b,SPEC_T).filter(x=>x.divisi);if(t.length){S.ttd=t;ok.push('ttd_cuti')}}catch(e){}
+  S.ttdOk=false;try{const t=parseTtd(await sheet('',TTD_GID));if(t.length){S.ttd=t;S.ttdOk=true;ok.push('ttd_cuti')}}catch(e){}
   try{const c=await sheet('ket_cuti');const k=uniq(c.rows.map(r=>String(r[0]||'').trim()));if(k.length&&!/divisi/i.test(c.h.join(' '))){S.ket=k;ok.push('ket_cuti')}}catch(e){}
   try{S.remote=parseRekap(await sheet('',REKAP_GID));if(S.remote.length)ok.push('rekap');reconcile()}catch(e){S.remote=[]}
   if(!S.ttd.length)S.ttd=TTD_DEMO.map(r=>({divisi:r[0],t1:r[1],u1:r[2],t2:r[3],u2:r[4],t3:r[5],u3:r[6],t4:r[7],u4:r[8]}));
@@ -403,8 +411,12 @@ $('#fKet').onchange=()=>{renderCal()};
 $('#clr').onclick=()=>{S.sel.clear();renderCal()};
 
 /* ================== PDF ================== */
+// Kunci pencocokan unit: kota (Biak, Jayapura, ...) atau 'cc' untuk Command Center, sehingga 'DCC UP3 Biak', 'Dcc Biak', 'UP3 Biak' tetap cocok
+const KOTA=['biak','jayapura','manokwari','merauke','nabire','sorong','timika','wamena'];
+const ukey=s=>{const n=N(s);if(!n)return'';const k=KOTA.find(x=>n.includes(x));return k||(/command|comcen/.test(n)?'cc':n)};
 function ttdFor(p){
-  const t=S.ttd.find(x=>N(x.divisi)==N(p.divisi))||S.ttd.find(x=>N(x.divisi)==N(p.unit))||{};
+  const f=v=>{const k=ukey(v);return k?S.ttd.find(x=>ukey(x.divisi)==k):null};
+  const t=f(p.divisi)||f(p.unit)||{};
   return{t1:t.t1||'',u1:t.u1||'',t2:t.t2||'',u2:t.u2||'',t3:t.t3||'',u3:t.u3||'',t4:t.t4||'',u4:t.u4||''};
 }
 function makePDF(r){
