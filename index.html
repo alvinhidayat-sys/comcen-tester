@@ -298,7 +298,7 @@ tr.pick td{background:rgba(0,143,199,.2)}
       <div class="hol" id="holList"></div>
       <div class="leg">
         <span><i class="sw-sel"></i>Hari cuti terpilih</span>
-        <span id="lkLeg" style="color:var(--red);font-weight:600"><i class="sw-lock"></i><b id="lkN">0</b> hari terlock (setelah 6 hari)</span>
+        <span id="lkLeg" style="color:var(--red);font-weight:600"><i class="sw-lock"></i><b id="lkN">0</b> hari terlock (2 hari setelah 6 hari berturut-turut)</span>
         <span id="offLeg"><i class="sw-off"></i>Libur nasional, cuti bersama, libur fakultatif / akhir pekan (tidak bisa dipilih)</span>
         <span><i class="sw-open"></i>Hari terbuka</span>
         <span class="chip tot" id="tot">Total terpilih: 0 hari kerja <small>(maks. 12 hari)</small></span>
@@ -434,6 +434,8 @@ const SPEC_P={nama:['nama','namapetugas','namalengkap','petugas','namapegawai'],
 const SPEC_T={divisi:['unit','divisi','unitkerja','penempatan'],t1:['ttd1'],u1:['unitttd1'],t2:['ttd2'],u2:['unitttd2'],t3:['ttd3'],u3:['unitttd3'],t4:['ttd4'],u4:['unitttd4']};
 const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
 
+// Normalisasi kategori dari sheet tenaga_kerja: 'Shift' / 'Non Shift' / 'Non-Shift' / 'NS' dst.
+const polaOf=v=>{const n=N(v);if(!n)return'';if(/^(ns|nonshift|noshift|tidakshift|reguler|regular|normal|harian|office)/.test(n)||n.includes('non'))return'Nonshift';if(n=='s'||n.includes('shift'))return'Shift';return''};
 const gen=g=>{g=String(g||'').trim();return /^(p|f)$|perempuan|wanita|female|cewek/i.test(g)?'P':(/^(l|m)$|laki|pria|male|cowok/i.test(g)?'L':'')};
 // Baca tab ttd_cuti: cocokkan kolom lewat judul; bila judul tidak terbaca, pakai urutan kolom tetap (Unit, ttd_1, Unit_ttd_1, ... ttd-4, Unit_ttd_4)
 function parseTtd(b){
@@ -459,7 +461,12 @@ async function syncRekap(){
 async function load(){
   setSync('busy');
   let ok=[];
-  try{const a=await sheet('',TK_GID);const p=mapRows(a,SPEC_P).filter(x=>x.nama);if(p.length){S.people=p.map(x=>({...x,gender:gen(x.gender),pola:/non/i.test(x.shift)?'Nonshift':(/shift/i.test(x.shift)?'Shift':'')}));ok.push('tenaga_kerja')}}catch(e){}
+  try{const a=await sheet('',TK_GID);
+    if(a.h.findIndex(x=>SPEC_P.shift.includes(N(x)))<0||!a.rows.some(r=>polaOf(r[a.h.findIndex(x=>SPEC_P.shift.includes(N(x)))]))){
+      let best=-1,bc=0;a.h.forEach((_,i)=>{const c=a.rows.filter(r=>polaOf(r[i])&&/shift/i.test(String(r[i]))).length;if(c>bc){bc=c;best=i}});
+      if(best>=0)a.h[best]='shift';
+    }
+    const p=mapRows(a,SPEC_P).filter(x=>x.nama);if(p.length){S.people=p.map(x=>({...x,gender:gen(x.gender),pola:polaOf(x.shift)}));ok.push('tenaga_kerja')}}catch(e){}
   S.ttdOk=false;try{const t=parseTtd(await sheet('',TTD_GID));if(t.length){S.ttd=t;S.ttdOk=true;ok.push('ttd_cuti')}}catch(e){}
   try{const c=await sheet('ket_cuti');const k=uniq(c.rows.map(r=>String(r[0]||'').trim()));if(k.length&&!/divisi/i.test(c.h.join(' '))){S.ket=k;ok.push('ket_cuti')}}catch(e){}
   try{S.remote=parseRekap(await sheet('',REKAP_GID));if(S.remote.length)ok.push('rekap');reconcile()}catch(e){S.remote=[]}
@@ -486,7 +493,7 @@ function pick(){
   const u=$('#fUnit').value,n=$('#fNama').value;
   S.p=S.people.find(p=>p.nama==n&&p.unit==u)||null;
   $('#fNik').value=S.p?S.p.noinduk:'';$('#fJab').value=S.p?S.p.jabatan:'';
-  const pl=$('#fPola');if(S.p&&S.p.pola){pl.value=S.p.pola;pl.disabled=true}else pl.disabled=false;
+  const pl=$('#fPola');if(S.p&&S.p.pola){pl.value=S.p.pola;pl.disabled=true}else{pl.value='Nonshift';pl.disabled=false}
   fillKet();S.sel.clear();renderCal();info();
 }
 function used(p,y){return all().filter(r=>N(r.nama)==N(p.nama)&&/tahun/i.test(r.ket||'tahunan')&&r.yr==String(y)).reduce((a,r)=>a+(+r.jumlah||0),0)}
@@ -503,24 +510,28 @@ function info(){
 
 /* ================== KALENDER & ATURAN ================== */
 const shift=()=>$('#fPola').value=='Shift';
-function run(d,dir){let n=0,x=add(d,dir);while(S.sel.has(iso(x))){n++;x=add(x,dir)}return n}
-function locked(d){
-  const l=run(d,-1),r=run(d,1);
-  if(l+r+1>6)return true;
-  const p=add(d,-1),q=add(d,1);
-  if(!S.sel.has(iso(p))&&run(p,-1)>=6)return true;
-  if(!S.sel.has(iso(q))&&run(q,1)>=6)return true;
-  return false;
+/* Shift: maks. 6 hari berturut-turut (libur/akhir pekan tetap boleh dipilih), lalu 2 hari tidak bisa dipilih; berulang seterusnya.
+   Set valid bila: tiap rangkaian hari terpilih <= 6 hari, dan rangkaian yang tepat 6 hari punya jeda minimal 2 hari kosong di kiri & kanan. */
+function validShift(set){
+  for(const k of set){
+    const d=dt(k);
+    if(set.has(iso(add(d,-1))))continue; // bukan awal rangkaian
+    let n=1,e=d;while(set.has(iso(add(e,1)))){e=add(e,1);n++}
+    if(n>6)return false;
+    if(n==6&&(set.has(iso(add(d,-2)))||set.has(iso(add(e,2)))))return false;
+  }
+  return true;
 }
+function locked(d){const t=new Set(S.sel);t.add(iso(d));return !validShift(t)}
 function status(d){
   const k=iso(d);
   if(S.sel.has(k))return'sel';
-  const wk=d.getDay()==0||d.getDay()==6;
-  if(!shift()){if(wk||hday(k))return'off';return'ok'}
+  if(!shift()){const wk=d.getDay()==0||d.getDay()==6;if(wk||hday(k))return'off';return'ok'}
   return locked(d)?'lock':'ok';
 }
 function renderCal(){
   const{y,m}=S.view;ensureYear(y);
+  if(!shift()){[...S.sel].forEach(k=>{const d=dt(k),w=d.getDay();if(w==0||w==6||hday(k))S.sel.delete(k)})}
   $('#calT').textContent=BLN[m]+' '+y;$('#mSel').value=m;$('#ySel').value=y;
   const first=new Date(y,m,1),start=add(first,-((first.getDay()+6)%7));
   let h=['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map((x,i)=>`<div class="dow ${i>4?'w':''}">${x}</div>`).join('');
@@ -529,12 +540,12 @@ function renderCal(){
     const d=add(start,i),k=iso(d),oth=d.getMonth()!=m,st=status(d),wk=d.getDay()==0||d.getDay()==6;
     if(!oth){if(st=='lock')lk++;if(st=='off')off++}
     const hd=hday(k),tp=hd?hd[1]:'',cls=['day',oth?'oth':'',wk?'w':'',tp=='n'?'h':tp?'c':'',k==iso(new Date())?'today':'',st=='ok'?'':st].join(' ');
-    const lab=st=='sel'?'Cuti':st=='lock'?'🔒 Lock':hd?({n:'Libur Nas.',c:'Cuti Bersama',f:'Fakultatif'})[tp]:st=='off'?'Akhir pekan':'Buka';
+    const lab=st=='sel'?'Cuti':st=='lock'?'🔒 Lock':hd?({n:'Libur Nas.',c:'Cuti Bersama',f:'Fakultatif'})[tp]:(st=='off'||wk)?'Akhir pekan':'Buka';
     h+=`<div class="${cls}" data-k="${k}" title="${esc(hd?hd[0]:'')}"><b>${d.getDate()}</b><small>${lab}</small></div>`;
   }
   $('#cal').innerHTML=h;
   const pre=y+'-'+p2(m+1),hm=holMap(y),hl=Object.keys(hm).filter(k=>k.startsWith(pre)).sort().map(k=>`<b>${dt(k).getDate()} ${BS[m]}</b> ${esc(hm[k][0])}${hm[k][1]=='f'?' (fakultatif)':''}`);
-  $('#holList').innerHTML='Libur &amp; cuti bersama '+BLN[m]+' (kebijakan '+provOf(S.p)+'): '+(hl.length?hl.join(' · '):'tidak ada')+(shift()?'':' <i>(tidak bisa dipilih untuk nonshift)</i>')+(holPartial(y)?'<br>⚠ Libur keagamaan &amp; cuti bersama '+y+(HOLP[y]?' sedang diambil…':' belum tersedia (hanya libur tetap yang tampil); isi lewat HOLX di kode.'):'');
+  $('#holList').innerHTML='Libur &amp; cuti bersama '+BLN[m]+' (kebijakan '+provOf(S.p)+'): '+(hl.length?hl.join(' · '):'tidak ada')+(shift()?' <i>(tetap bisa dipilih untuk shift)</i>':' <i>(tidak bisa dipilih untuk nonshift)</i>')+(holPartial(y)?'<br>⚠ Libur keagamaan &amp; cuti bersama '+y+(HOLP[y]?' sedang diambil…':' belum tersedia (hanya libur tetap yang tampil); isi lewat HOLX di kode.'):'');
   $('#lkN').textContent=lk;$('#lkLeg').style.display=shift()?'':'none';
   $('#offLeg').style.display=shift()?'none':'';
   $('#tot').innerHTML=`Total terpilih: ${S.sel.size} hari kerja <small>(maks. ${limit()} hari)</small>`;
@@ -543,7 +554,7 @@ function renderCal(){
 }
 function trySel(d,quiet){
   const k=iso(d),st=status(d);
-  if(st=='lock'){if(!quiet)toast('Tanggal terkunci: setelah 6 hari berturut-turut, 2 hari berikutnya tidak bisa dipilih.');return false}
+  if(st=='lock'){if(!quiet)toast('Shift: maksimal 6 hari berturut-turut, lalu 2 hari berikutnya tidak bisa dipilih.');return false}
   if(st=='off'){if(!quiet)toast('Nonshift: Sabtu, Minggu, libur nasional, cuti bersama, dan libur fakultatif tidak bisa dipilih.');return false}
   if(S.sel.size>=limit()){if(!quiet)toast(`Maksimal ${limit()} hari cuti.`);return false}
   S.sel.add(k);return true;
