@@ -131,7 +131,6 @@ tr.pick{background:#eaf2ff}
       <select id="fPola" class="hide" tabindex="-1" aria-hidden="true"><option>Nonshift</option><option>Shift</option></select>
       <label>Jabatan</label><input id="fJab" readonly>
       <label>Keterangan cuti</label><select id="fKet"></select>
-      <label>Nomor surat (otomatis)</label><input id="fNo" readonly>
       <label>Hari &amp; tanggal pengajuan (otomatis)</label><input id="fTgl" readonly>
       <div class="info" id="info">Pilih petugas untuk melihat sisa jatah cuti.</div>
     </div>
@@ -250,7 +249,12 @@ const BS=BLN.map(b=>b.slice(0,3));
 const fmt=s=>{const d=dt(s);return d.getDate()+' '+BLN[d.getMonth()]+' '+d.getFullYear()};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),3200)}
-function pd(s){s=String(s||'');let m=s.match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];m=s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);return m?m[3]+'-'+p2(m[2])+'-'+p2(m[1]):''}
+const BL2={jan:0,feb:1,mar:2,apr:3,mei:4,may:4,jun:5,jul:6,agu:7,ags:7,aug:7,sep:8,okt:9,oct:9,nov:10,des:11,dec:11};
+function pd(s){s=String(s||'');let m=s.match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];
+  m=s.match(/Date\((\d{4}),(\d+),(\d+)/);if(m)return m[1]+'-'+p2(+m[2]+1)+'-'+p2(m[3]);
+  m=s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);if(m)return m[3]+'-'+p2(m[2])+'-'+p2(m[1]);
+  m=s.match(/(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})/);if(m&&BL2[m[2].toLowerCase()]!=null)return m[3]+'-'+p2(BL2[m[2].toLowerCase()]+1)+'-'+p2(m[1]);
+  return ''}
 const uniq=a=>[...new Set(a.filter(Boolean))];
 const lsGet=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -261,7 +265,7 @@ const S={sel:new Set(),view:{y:now.getFullYear(),m:now.getMonth()},people:[],ttd
 
 /* ================== DATA SHEET ================== */
 async function sheet(name,gid){
-  const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&`+(gid?'gid='+gid:'sheet='+encodeURIComponent(name)));
+  const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&_=${Date.now()}&`+(gid?'gid='+gid:'sheet='+encodeURIComponent(name)),{cache:'no-store'});
   const t=await r.text();
   const j=JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));
   let h=j.table.cols.map(c=>c.label||'');
@@ -298,7 +302,7 @@ async function syncRekap(){
   if(document.hidden)return;
   setSync('busy');
   try{S.remote=parseRekap(await sheet('',REKAP_GID));reconcile();setSync(S.demo?'err':'ok')}catch(e){setSync('err')}
-  refreshAuto();info();if(!$('#v-mon').classList.contains('hide'))mon();
+  refreshAuto();info();renderCal();if(!$('#v-mon').classList.contains('hide'))mon();
 }
 async function load(){
   setSync('busy');
@@ -333,7 +337,7 @@ function pick(){
   const pl=$('#fPola');if(S.p&&S.p.pola){pl.value=S.p.pola;pl.disabled=true}else pl.disabled=false;
   fillKet();S.sel.clear();renderCal();info();
 }
-function used(p,y){return all().filter(r=>N(r.nama)==N(p.nama)&&/tahun/i.test(r.ket||'tahunan')&&(r.mulai||'').slice(0,4)==String(y)).reduce((a,r)=>a+(+r.jumlah||0),0)}
+function used(p,y){return all().filter(r=>N(r.nama)==N(p.nama)&&/tahun/i.test(r.ket||'tahunan')&&r.yr==String(y)).reduce((a,r)=>a+(+r.jumlah||0),0)}
 const isTahunan=()=>/tahun/i.test($('#fKet').value||'');
 function sisaNow(){return S.p?Math.max(0,JATAH-used(S.p,S.view.y)):JATAH}
 function limit(){if(isTahunan())return Math.min(JATAH,sisaNow());return /melahirkan|bersalin/i.test($('#fKet').value)?90:JATAH}
@@ -428,7 +432,7 @@ function makePDF(r){
   // judul
   d.setFontSize(10);d.setFont('helvetica','bold');const T='SURAT PERMOHONAN TIDAK MASUK KERJA',tw=d.getTextWidth(T);
   d.text(T,297.5,102,{align:'center'});d.line(297.5-tw/2,104,297.5+tw/2,104);
-  d.setFont('helvetica','normal');d.text('Nomor : '+(r.nomor?r.nomor:'')+'/SDM.00/PLN ND - PA/'+r.tglAjuan.slice(0,4),297.5,115,{align:'center'});
+  d.setFont('helvetica','normal');d.text('Nomor : '+(r.nomor?r.nomor:'       ')+'/SDM.00/PLN ND - PA/'+r.tglAjuan.slice(0,4),297.5,115,{align:'center'});
   const row=(y,l,v)=>{d.setFont('helvetica','normal');d.text(l,73,y);d.text(':',217,y);const ls=d.splitTextToSize(String(v||'-'),330);d.text(ls,225,y);return y+13*ls.length};
   d.text('Yang bertanda tangan di bawah ini :',73,152);
   let y=165;y=row(y,'Nama',r.nama);y=row(y,'No. Induk',r.noinduk);y=row(y,'Jabatan',r.jabatan);y=row(y,'Penempatan',r.unit);
@@ -456,13 +460,13 @@ const hari=s=>HARI[dt(s).getDay()]+', '+fmt(s);
 const lam=r=>r.mulai?(r.mulai==r.selesai?hari(r.mulai):hari(r.mulai)+' s/d '+hari(r.selesai)):'-';
 const pad3=n=>String(n).padStart(3,'0');
 function peekNo(y){const mx=[...S.remote,...S.local].filter(r=>String(r.tglAjuan||r.mulai||'').slice(0,4)==String(y)).reduce((a,r)=>Math.max(a,parseInt(r.nomor)||0),0);return Math.max(lsGet('cuti_no_'+y,0),mx)+1}
-function refreshAuto(){const t=iso(new Date()),y=t.slice(0,4);$('#fTgl').value=hari(t);$('#fNo').value=pad3(peekNo(y))+'/SDM.00/PLN ND - PA/'+y}
+function refreshAuto(){$('#fTgl').value=hari(iso(new Date()))}
 
 function buildRec(){
   if(!S.p){toast('Pilih unit dan nama petugas terlebih dahulu.');return null}
   if(!S.sel.size){toast('Pilih minimal satu tanggal cuti pada kalender.');return null}
   const tgl=iso(new Date()),dates=[...S.sel].sort(),jumlah=dates.length,tah=isTahunan(),u=used(S.p,dt(dates[0]).getFullYear());
-  return{id:Date.now(),nomor:pad3(peekNo(tgl.slice(0,4))),nama:S.p.nama,noinduk:S.p.noinduk,jabatan:S.p.jabatan,divisi:S.p.divisi,unit:S.p.unit,pola:$('#fPola').value,ket:$('#fKet').value,dates,mulai:dates[0],selesai:dates[dates.length-1],jumlah,lamanya:lam({mulai:dates[0],selesai:dates[dates.length-1]}),tglAjuan:tgl,sisa:Math.max(0,JATAH-u-(tah?jumlah:0)),ttd:ttdFor(S.p)};
+  return{id:Date.now(),nomor:'',nama:S.p.nama,noinduk:S.p.noinduk,jabatan:S.p.jabatan,divisi:S.p.divisi,unit:S.p.unit,pola:$('#fPola').value,ket:$('#fKet').value,dates,mulai:dates[0],selesai:dates[dates.length-1],jumlah,lamanya:lam({mulai:dates[0],selesai:dates[dates.length-1]}),tglAjuan:tgl,sisa:Math.max(0,JATAH-u-(tah?jumlah:0)),ttd:ttdFor(S.p)};
 }
 function letterHTML(r){
   const e=esc,t=r.ttd,yr=r.tglAjuan.slice(0,4);
@@ -473,7 +477,7 @@ function letterHTML(r){
   const hdr=`<img src="${HDR_PNG}" style="width:595px;display:block">`,lg=`<img src="${LOGO_SVG}" style="width:118px;display:block">`;
   return A(0,0,595,hdr)+A(438,44,0,lg)
   +C(297.5,92,520,'<b style="text-decoration:underline">SURAT PERMOHONAN TIDAK MASUK KERJA</b>')
-  +C(297.5,106,520,`Nomor : ${e(r.nomor)}/SDM.00/PLN ND - PA/${yr}`)
+  +C(297.5,106,520,`Nomor : ${r.nomor?e(r.nomor):'<span style="display:inline-block;width:20px"></span>'}/SDM.00/PLN ND - PA/${yr}`)
   +A(73,143,480,`Yang bertanda tangan di bawah ini :${row('Nama',r.nama)}${row('No. Induk',r.noinduk)}${row('Jabatan',r.jabatan)}${row('Penempatan',r.unit)}<div style="margin:14px 0 13px">Dengan ini mengajukan permohonan tidak masuk kerja :</div>${row('Keterangan',r.ket)}${row('Lamanya Cuti',lam(r))}${row('Jumlah Cuti',r.jumlah+' Hari')}${row('Sisa Cuti',r.sisa+' Hari')}`)
   +A(0,328,0,e(hari(r.tglAjuan)),'left:auto;right:39px;')
   +C(190,368,170,'Menyetujui')+C(432,368,170,'Pemohon')
@@ -497,7 +501,7 @@ $('#pvDl').onclick=()=>{
   if(!cur||cur.saved)return;
   if(!window.jspdf)return toast('Pustaka PDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.');
   try{makePDF(cur)}catch(e){return toast('Gagal membuat PDF, data belum disimpan: '+e.message)}
-  cur.saved=1;lsSet('cuti_no_'+cur.tglAjuan.slice(0,4),parseInt(cur.nomor));
+  cur.saved=1;
   const rec={...cur};delete rec.saved;S.local.push(rec);lsSet('cuti_rekap_v1',S.local);
   if(APPS_URL)fetch(APPS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(rec)}).catch(()=>{});
   $('#pv').close();
@@ -506,15 +510,15 @@ $('#pvDl').onclick=()=>{
 };
 
 /* ================== MONITORING ================== */
-const rk=r=>[N(r.nama),r.mulai,r.selesai,+r.jumlah].join('|'),rn=r=>{const n=parseInt(r.nomor);return n?N(r.nama)+'#'+n+'#'+String(r.tglAjuan||r.mulai||'').slice(0,4):''};
-// Rekap di Google Sheet = sumber utama. Pengajuan lokal yang sudah pernah terlihat di sheet (atau tak muncul >5 menit setelah disimpan) lalu hilang dari sheet ikut dihapus -> sisa cuti kembali.
+const rk=r=>[N(r.nama),r.mulai,r.selesai,+r.jumlah].join('|'),rt=r=>r.tglAjuan?N(r.nama)+'|'+r.tglAjuan+'|'+(+r.jumlah):'';
+// Rekap di Google Sheet = sumber utama. Pengajuan lokal yang sudah pernah terlihat di sheet (atau tak muncul >5 menit setelah disimpan) lalu hilang dari sheet ikut dihapus -> sisa cuti kembali penuh (untuk simulasi).
 function reconcile(){
   if(!APPS_URL)return;
-  const a=new Set(S.remote.map(rk)),b=new Set(S.remote.map(rn).filter(Boolean)),t=Date.now();
-  S.local=S.local.filter(r=>{const k2=rn(r);if(a.has(rk(r))||(k2&&b.has(k2))){r.seen=1;return true}return !(r.seen||t-(+r.id||0)>300000)});
+  const a=new Set(S.remote.map(rk)),b=new Set(S.remote.map(rt).filter(Boolean)),t=Date.now();
+  S.local=S.local.filter(r=>{const k2=rt(r);if(a.has(rk(r))||(k2&&b.has(k2))){r.seen=1;return true}return !(r.seen||t-(+r.id||0)>300000)});
   lsSet('cuti_rekap_v1',S.local);
 }
-const all=()=>{const seen=new Set(),out=[];[...S.local,...S.remote].forEach(r=>{const k=rk(r),k2=rn(r);if(seen.has(k)||(k2&&seen.has(k2)))return;seen.add(k);if(k2)seen.add(k2);out.push({...r,unit:r.unit||r.divisi||'-',divisi:r.divisi||r.unit||'-',yr:(r.mulai||'').slice(0,4)||String(now.getFullYear()),mo:r.mulai?+r.mulai.slice(5,7)-1:-1})});return out};
+const all=()=>{const seen=new Set(),out=[];[...S.local,...S.remote].forEach(r=>{const k=rk(r);if(seen.has(k))return;seen.add(k);out.push({...r,unit:r.unit||r.divisi||'-',divisi:r.divisi||r.unit||'-',yr:(r.mulai||r.tglAjuan||'').slice(0,4)||String(now.getFullYear()),mo:r.mulai?+r.mulai.slice(5,7)-1:-1})});return out};
 function mon(){
   const A=all(),yrs=uniq(A.map(r=>r.yr).concat(String(now.getFullYear()))).sort();
   const cy=$('#mYear').value||String(now.getFullYear());
@@ -568,7 +572,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{
   if(b.dataset.v=='mon')mon();
 });
 $('#sync').onclick=()=>load().then(()=>toast('Data disinkronkan ulang.'));
-setInterval(syncRekap,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRekap()});
+setInterval(syncRekap,45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRekap()});
 
 /* ================== INIT ================== */
 function updateAll(){renderCal();info();refreshAuto()}
