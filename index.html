@@ -28,7 +28,7 @@ nav button.on{background:var(--pri);color:#fff}
 aside.min nav button{justify-content:center}
 .foot{margin-top:auto;padding:14px;font-size:12px;border-top:1px solid #ffffff1f;display:grid;gap:8px}
 .foot button{background:#ffffff1a;border:0;color:#fff;padding:7px;border-radius:6px;cursor:pointer}
-main{flex:1;min-width:0;padding:22px 26px}
+main{flex:1;min-width:0;padding:22px 26px;position:relative}
 h1{font-size:21px;margin:0 0 2px}
 .sub{color:var(--mut);margin:0 0 18px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
@@ -89,6 +89,13 @@ tr.pick{background:#eaf2ff}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90vw}
 #toast.on{opacity:1}
 .hide{display:none}
+.sync{position:absolute;top:18px;right:26px;display:flex;gap:8px;align-items:center;padding:6px 13px;border:1px solid var(--line);background:#fff;border-radius:99px;font-size:12.5px;cursor:pointer;z-index:5}
+.sync .dot{width:9px;height:9px;border-radius:50%;background:#f5a800}
+.sync.ok .dot{background:#1fa35c}.sync.err .dot{background:var(--red)}.sync.err{color:var(--red);border-color:#f4a3b0}
+.sync.busy .dot{animation:bl 1s infinite}@keyframes bl{50%{opacity:.25}}
+.hol{margin-top:12px;font-size:12.5px;color:var(--mut)}.hol b{color:var(--red)}
+.day.off.h{background:repeating-linear-gradient(135deg,#fff1f3,#fff1f3 6px,#ffe3e8 6px,#ffe3e8 12px)}
+.day.off.h b,.day.off.h small{color:var(--red)}
 #pv{border:0;border-radius:12px;padding:0;width:min(680px,96vw);max-height:94vh;overflow:hidden}
 #pv[open]{display:flex;flex-direction:column}
 #pv::backdrop{background:#0008}
@@ -97,7 +104,7 @@ tr.pick{background:#eaf2ff}
 #pvw{margin:0 auto;box-shadow:0 2px 14px #0004;background:#fff}
 .sheet{position:relative;width:595px;height:842px;background:#fff;transform-origin:top left;font:10px/13px Arial,Helvetica,sans-serif;color:#000;overflow:hidden}
 .pvf{padding:8px 14px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}
-@media(max-width:900px){.grid,.charts,.tbls{grid-template-columns:1fr}main{padding:16px 12px}aside{width:66px}aside .lbl{display:none}aside .brand{flex-direction:column}#tg{display:none}nav button{justify-content:center}.day{min-height:46px}.day small{font-size:9px}}
+@media(max-width:900px){.grid,.charts,.tbls{grid-template-columns:1fr}main{padding:16px 12px}aside{width:66px}aside .lbl{display:none}aside .brand{flex-direction:column}#tg{display:none}nav button{justify-content:center}.day{min-height:46px}.sync{position:static;margin:0 0 10px;width:fit-content}.day small{font-size:9px}}
 </style>
 </head>
 <body>
@@ -108,10 +115,10 @@ tr.pick{background:#eaf2ff}
     <button data-v="in" class="on"><i>📝</i><span class="lbl">Input Pengajuan Cuti</span></button>
     <button data-v="mon"><i>📊</i><span class="lbl">Monitoring Cuti</span></button>
   </nav>
-  <div class="foot lbl"><span id="st">Memuat data…</span><button id="reload">↻ Muat ulang data</button></div>
 </aside>
 
 <main>
+<div class="sync busy" id="sync" role="button" title="Klik untuk sinkron ulang"><span class="dot"></span><span id="syncT">Menyinkronkan…</span></div>
 <!-- ============ INPUT ============ -->
 <section id="v-in">
   <h1>Input Pengajuan Cuti</h1>
@@ -120,7 +127,8 @@ tr.pick{background:#eaf2ff}
     <div class="card">
       <label>Unit</label><select id="fUnit"></select>
       <label>Nama petugas</label><select id="fNama"></select>
-      <div class="row2"><div><label>No. Induk</label><input id="fNik" readonly></div><div><label>Pola kerja (otomatis)</label><select id="fPola"><option>Nonshift</option><option>Shift</option></select></div></div>
+      <label>No. Induk</label><input id="fNik" readonly>
+      <select id="fPola" class="hide" tabindex="-1" aria-hidden="true"><option>Nonshift</option><option>Shift</option></select>
       <label>Jabatan</label><input id="fJab" readonly>
       <label>Keterangan cuti</label><select id="fKet"></select>
       <label>Nomor surat (otomatis)</label><input id="fNo" readonly>
@@ -136,10 +144,11 @@ tr.pick{background:#eaf2ff}
         <button class="nav" id="prev" aria-label="Bulan sebelumnya">‹</button><button class="nav" id="next" aria-label="Bulan berikutnya">›</button>
       </div>
       <div class="cal" id="cal"></div>
+      <div class="hol" id="holList"></div>
       <div class="leg">
         <span><i style="background:#1560d6;border-color:#1560d6"></i>Hari cuti terpilih</span>
         <span id="lkLeg" style="color:var(--red);font-weight:600"><i style="background:#ffeef0;border-color:#f4a3b0"></i><b id="lkN">0</b> hari terlock (setelah 6 hari)</span>
-        <span id="offLeg"><i style="background:#e6ebf3"></i>Libur / tidak bisa dipilih</span>
+        <span id="offLeg"><i style="background:#e6ebf3"></i>Libur nasional / akhir pekan (tidak bisa dipilih)</span>
         <span><i style="background:#fff"></i>Hari terbuka</span>
         <span class="chip tot" id="tot">Total terpilih: 0 hari kerja <small>(maks. 12 hari)</small></span>
       </div>
@@ -189,6 +198,7 @@ tr.pick{background:#eaf2ff}
 const SHEET_ID='1dG-Y4jeWtgzAuGFXvxAUl3zTn6nWNMiQPaSAGuuM3vg';
 const JATAH=12;
 const REKAP_GID='1393552530'; // tab rekap
+const TK_GID='0'; // tab tenaga_kerja
 const APPS_URL='https://script.google.com/macros/s/AKfycbwDanh7gMtCFpdVEYCDQFnBC9MDlPBQ9QfECs51AcbMzFwL5pO31CSyXtd3lftXSZU-pA/exec'; // TEMPEL URL Web App Apps Script (…/exec) di antara tanda kutip ini
 // Libur nasional 2026 (SKB 3 Menteri) – tambahkan/ubah di sini bila perlu: 'YYYY-MM-DD':'nama'
 const HOL={'2026-01-01':'Tahun Baru','2026-01-16':'Isra Mi\'raj','2026-02-17':'Tahun Baru Imlek','2026-03-19':'Nyepi','2026-03-21':'Idulfitri','2026-03-22':'Idulfitri','2026-04-03':'Wafat Yesus Kristus','2026-04-05':'Paskah','2026-05-01':'Hari Buruh','2026-05-14':'Kenaikan Yesus Kristus','2026-05-27':'Iduladha','2026-05-31':'Waisak','2026-06-01':'Hari Lahir Pancasila','2026-06-16':'Tahun Baru Islam','2026-08-17':'Kemerdekaan RI','2026-08-25':'Maulid Nabi','2026-12-25':'Natal'};
@@ -231,23 +241,37 @@ function mapRows({h,rows},spec){
   for(const k in spec){idx[k]=h.findIndex(x=>spec[k].includes(N(x)))}
   return rows.map(r=>{const o={};for(const k in spec)o[k]=idx[k]>=0?String(r[idx[k]]??'').trim():'';return o});
 }
-const SPEC_P={nama:['nama','namapetugas','namalengkap','petugas','namapegawai'],noinduk:['noinduk','nip','induk','nik','noindukpegawai','noindukkaryawan'],jabatan:['jabatan'],divisi:['divisi','bagian','seksi'],unit:['unit','penempatan','lokasi','unitkerja'],shift:['shift','statusshift','polakerja','jeniskerja','jenis','status','kategori','jamkerja']};
+const SPEC_P={nama:['nama','namapetugas','namalengkap','petugas','namapegawai'],noinduk:['noinduk','nip','induk','nik','noindukpegawai','noindukkaryawan'],jabatan:['jabatan'],divisi:['divisi','bagian','seksi'],unit:['unit','penempatan','lokasi','unitkerja'],shift:['shift','statusshift','polakerja','jeniskerja','jenis','status','kategori','jamkerja','shiftnonshift','statuskerja','kategorishift'],gender:['jeniskelamin','jk','gender','kelamin','lp','sex','lakilakiperempuan']};
 const SPEC_T={divisi:['divisi'],t1:['ttd1'],u1:['unitttd1'],t2:['ttd2'],u2:['unitttd2'],t3:['ttd3'],u3:['unitttd3'],t4:['ttd4'],u4:['unitttd4']};
 const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
 
+const gen=g=>{g=String(g||'').trim();return /^(p|f)$|perempuan|wanita|female|cewek/i.test(g)?'P':(/^(l|m)$|laki|pria|male|cowok/i.test(g)?'L':'')};
+function parseRekap(d){return mapRows(d,SPEC_R).filter(x=>x.nama&&+x.jumlah>0).map(x=>({...x,jumlah:+x.jumlah,mulai:pd(x.mulai),selesai:pd(x.selesai),tglAjuan:pd(x.tglAjuan),remote:1}))}
+function setSync(st){
+  const el=$('#sync');el.className='sync '+st;
+  const hm=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  $('#syncT').textContent=st=='busy'?'Menyinkronkan…':st=='ok'?'Tersinkron '+hm.replace('.',':'):'Gagal sinkron';
+  el.title=st=='ok'?'Terhubung ke Google Sheet ('+(S.ok||[]).join(', ')+'). Klik untuk sinkron ulang.':st=='err'?'Data tenaga_kerja belum terbaca. Pastikan sheet dibagikan “Anyone with the link – Viewer”. Klik untuk mencoba lagi.':'Mengambil data…';
+}
+async function syncRekap(){
+  if(document.hidden)return;
+  setSync('busy');
+  try{S.remote=parseRekap(await sheet('',REKAP_GID));setSync(S.demo?'err':'ok')}catch(e){setSync('err')}
+  refreshAuto();info();if(!$('#v-mon').classList.contains('hide'))mon();
+}
 async function load(){
-  $('#st').textContent='Memuat data…';
+  setSync('busy');
   let ok=[];
-  try{const a=await sheet('tenaga_kerja');const p=mapRows(a,SPEC_P).filter(x=>x.nama);if(p.length){S.people=p.map(x=>({...x,pola:/non/i.test(x.shift)?'Nonshift':(/shift/i.test(x.shift)?'Shift':'')}));ok.push('tenaga_kerja')}}catch(e){}
+  try{const a=await sheet('',TK_GID);const p=mapRows(a,SPEC_P).filter(x=>x.nama);if(p.length){S.people=p.map(x=>({...x,gender:gen(x.gender),pola:/non/i.test(x.shift)?'Nonshift':(/shift/i.test(x.shift)?'Shift':'')}));ok.push('tenaga_kerja')}}catch(e){}
   try{const b=await sheet('ttd_cuti');const t=mapRows(b,SPEC_T).filter(x=>x.divisi);if(t.length){S.ttd=t;ok.push('ttd_cuti')}}catch(e){}
   try{const c=await sheet('ket_cuti');const k=uniq(c.rows.map(r=>String(r[0]||'').trim()));if(k.length&&!/divisi/i.test(c.h.join(' '))){S.ket=k;ok.push('ket_cuti')}}catch(e){}
-  try{const d=await sheet('',REKAP_GID);S.remote=mapRows(d,SPEC_R).filter(x=>x.nama&&+x.jumlah>0).map(x=>({...x,jumlah:+x.jumlah,mulai:pd(x.mulai),selesai:pd(x.selesai),tglAjuan:pd(x.tglAjuan),remote:1}));if(S.remote.length)ok.push('rekap')}catch(e){S.remote=[]}
+  try{S.remote=parseRekap(await sheet('',REKAP_GID));if(S.remote.length)ok.push('rekap')}catch(e){S.remote=[]}
   if(!S.ttd.length)S.ttd=TTD_DEMO.map(r=>({divisi:r[0],t1:r[1],u1:r[2],t2:r[3],u2:r[4],t3:r[5],u3:r[6],t4:r[7],u4:r[8]}));
   if(!S.ket.length)S.ket=['Cuti Tahunan','Cuti Sakit','Cuti Melahirkan','Cuti Alasan Penting'];
   S.demo=!S.people.length;
-  if(S.demo){S.people=[];S.ttd.forEach((t,i)=>{[1,2].forEach(n=>S.people.push({nama:`Petugas Contoh ${i*2+n}`,noinduk:'0000'+(i*2+n),jabatan:n==1?'Operator DCC':'Staf Administrasi',divisi:t.divisi,unit:t.divisi,pola:n==1?'Shift':'Nonshift'}))})}
+  if(S.demo){S.people=[];S.ttd.forEach((t,i)=>{[1,2].forEach(n=>S.people.push({nama:`Petugas Contoh ${i*2+n}`,noinduk:'0000'+(i*2+n),jabatan:n==1?'Operator DCC':'Staf Administrasi',divisi:t.divisi,unit:t.divisi,pola:n==1?'Shift':'Nonshift',gender:n==1?'L':'P'}))})}
   S.people.forEach(p=>{if(!p.divisi)p.divisi=p.unit;if(!p.unit)p.unit=p.divisi});
-  $('#st').innerHTML=S.demo?'⚠ Mode contoh: tab <b>tenaga_kerja</b> belum terbaca / belum terisi. Pastikan sheet dibagikan “Anyone with the link – Viewer”.':'✔ Terhubung ke Google Sheet<br><small>'+ok.join(', ')+'</small>';
+  S.ok=ok;setSync(S.demo?'err':'ok');
   fillUnit();fillKet();updateAll();
 }
 
@@ -255,18 +279,23 @@ async function load(){
 function opt(sel,vals,ph){sel.innerHTML=(ph?`<option value="">${ph}</option>`:'')+vals.map(v=>`<option>${esc(v)}</option>`).join('')}
 function fillUnit(){opt($('#fUnit'),uniq(S.people.map(p=>p.unit)).sort(),'— pilih unit —');fillNama()}
 function fillNama(){const u=$('#fUnit').value;const n=u?S.people.filter(p=>p.unit==u).map(p=>p.nama).sort():[];opt($('#fNama'),n,u?'— pilih petugas —':'— pilih unit dahulu —');pick()}
-function fillKet(){opt($('#fKet'),S.ket)}
+function fillKet(){
+  const f=re=>S.ket.find(k=>re.test(k));
+  const out=[f(/tahun/i)||'Cuti Tahunan'];
+  if(S.p&&S.p.gender=='P')out.push(f(/melahirkan|bersalin|hamil/i)||'Cuti Melahirkan');
+  opt($('#fKet'),out);
+}
 function pick(){
   const u=$('#fUnit').value,n=$('#fNama').value;
   S.p=S.people.find(p=>p.nama==n&&p.unit==u)||null;
   $('#fNik').value=S.p?S.p.noinduk:'';$('#fJab').value=S.p?S.p.jabatan:'';
   const pl=$('#fPola');if(S.p&&S.p.pola){pl.value=S.p.pola;pl.disabled=true}else pl.disabled=false;
-  S.sel.clear();renderCal();info();
+  fillKet();S.sel.clear();renderCal();info();
 }
 function used(p,y){return [...S.remote,...S.local].filter(r=>N(r.nama)==N(p.nama)&&/tahun/i.test(r.ket||'tahunan')&&(r.mulai||'').slice(0,4)==String(y)).reduce((a,r)=>a+(+r.jumlah||0),0)}
 const isTahunan=()=>/tahun/i.test($('#fKet').value||'');
 function sisaNow(){return S.p?Math.max(0,JATAH-used(S.p,S.view.y)):JATAH}
-function limit(){return isTahunan()?Math.min(JATAH,sisaNow()):JATAH}
+function limit(){if(isTahunan())return Math.min(JATAH,sisaNow());return /melahirkan|bersalin/i.test($('#fKet').value)?90:JATAH}
 function info(){
   const el=$('#info');
   if(!S.p){el.textContent='Pilih petugas untuk melihat sisa jatah cuti.';return}
@@ -302,10 +331,13 @@ function renderCal(){
     const d=add(start,i),k=iso(d),oth=d.getMonth()!=m,st=status(d),wk=d.getDay()==0||d.getDay()==6;
     if(!oth){if(st=='lock')lk++;if(st=='off')off++}
     const cls=['day',oth?'oth':'',wk?'w':'',HOL[k]?'h':'',st=='ok'?'':st].join(' ');
-    const lab=st=='sel'?'Cuti':st=='lock'?'🔒 Lock':st=='off'?'Libur':HOL[k]?'Libur Nas.':'Buka';
+    const lab=st=='sel'?'Cuti':st=='lock'?'🔒 Lock':st=='off'?(HOL[k]?'Libur Nas.':'Akhir pekan'):HOL[k]?'Libur Nas.':'Buka';
     h+=`<div class="${cls}" data-k="${k}" title="${HOL[k]||''}"><b>${d.getDate()}</b><small>${lab}</small></div>`;
   }
   $('#cal').innerHTML=h;
+  const pre=y+'-'+p2(m+1),hl=Object.keys(HOL).filter(k=>k.startsWith(pre)).sort().map(k=>`<b>${dt(k).getDate()} ${BS[m]}</b> ${esc(HOL[k])}`);
+  const noData=!Object.keys(HOL).some(k=>k.startsWith(y+'-'));
+  $('#holList').innerHTML=noData?'⚠ Data libur nasional tahun '+y+' belum tersedia di aplikasi.':'Libur nasional '+BLN[m]+': '+(hl.length?hl.join(' · '):'tidak ada')+(shift()?'':' <i>(tidak bisa dipilih untuk nonshift)</i>');
   $('#lkN').textContent=lk;$('#lkLeg').style.display=shift()?'':'none';
   $('#offLeg').style.display=shift()?'none':'';
   $('#tot').innerHTML=`Total terpilih: ${S.sel.size} hari kerja <small>(maks. ${limit()} hari)</small>`;
@@ -431,7 +463,7 @@ $('#pvDl').onclick=()=>{
   }
   makePDF(cur);$('#pv').close();
   toast('PDF diunduh dan pengajuan tersimpan di riwayat.');
-  S.sel.clear();renderCal();info();refreshAuto();
+  S.sel.clear();renderCal();info();refreshAuto();setTimeout(syncRekap,4000);
 };
 
 /* ================== MONITORING ================== */
@@ -488,7 +520,8 @@ $$('nav button').forEach(b=>b.onclick=()=>{
   $('#v-in').classList.toggle('hide',b.dataset.v!='in');$('#v-mon').classList.toggle('hide',b.dataset.v!='mon');
   if(b.dataset.v=='mon')mon();
 });
-$('#reload').onclick=()=>load().then(()=>toast('Data dimuat ulang.'));
+$('#sync').onclick=()=>load().then(()=>toast('Data disinkronkan ulang.'));
+setInterval(syncRekap,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRekap()});
 
 /* ================== INIT ================== */
 function updateAll(){renderCal();info();refreshAuto()}
