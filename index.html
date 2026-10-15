@@ -357,6 +357,17 @@ td.cell{min-width:36px;height:28px;cursor:pointer;font-size:11px;padding:2px 4px
 td.sel{outline:2px solid var(--pr)!important;outline-offset:-2px}
 td.cell.lock{opacity:.5;cursor:not-allowed;background-image:repeating-linear-gradient(45deg,transparent 0 5px,rgba(130,130,130,.28) 5px 7px)}
 td.mix{font-weight:700;box-shadow:inset 0 -2px 0 rgba(120,120,120,.6)}
+#modal .box,#mA .box{overflow:auto}
+#mU .box{overflow:auto;max-width:98vw}
+.sg{display:block;border-radius:4px;padding:0 4px;margin:1px auto;font-size:10px;line-height:14px;font-weight:700;white-space:nowrap;width:fit-content}
+.sg.lm{outline:1.5px solid #f08c00;background:rgba(240,140,0,.35)!important}
+.sg.ot{background:rgba(240,140,0,.18);border:1px dashed #f08c00}
+td.cell.u{padding:1px 3px;min-width:46px;height:34px;vertical-align:middle}
+td.cell.warn{box-shadow:inset 0 0 0 2px #d33}
+#ufrm th,#ufrm td{font-size:11px}
+.ed #uInfo{font-weight:700;align-self:center;min-width:170px}#udet{font-size:12px;color:var(--tx);line-height:1.6;min-height:38px;max-width:none}
+#uExtra{display:contents}#uAdd:disabled{opacity:.5;cursor:not-allowed}#uAlsT{width:230px}
+@media(max-width:760px){.ed #uInfo{min-width:0;width:100%}#uAlsT{min-width:0;width:100%}}
 #aeExtra{display:contents}#aeAdd:disabled{opacity:.5;cursor:not-allowed}
 .ed{display:flex;flex-wrap:wrap;gap:10px;align-items:end;border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
 .ed label b{color:var(--pr)}.ed select{min-width:150px}.ed #eInfo{font-weight:700;align-self:center;min-width:170px}
@@ -729,6 +740,32 @@ select:disabled,input:disabled{opacity:.6}
  <span><button id=&quot;bX&quot;>Batal</button> <button class=&quot;pr&quot; id=&quot;bS&quot;>Simpan</button></span></div>
 </div></div>
 
+<!-- FORM TERPADU ABSENSI + LEMBUR -->
+<div class=&quot;ov&quot; id=&quot;mU&quot;><div class=&quot;box&quot;>
+ <div style=&quot;display:flex;gap:10px;align-items:center;flex-wrap:wrap&quot;><b id=&quot;umt&quot;></b><span class=&quot;sp&quot;></span><span class=&quot;chips&quot; id=&quot;uwarn&quot;></span><button id=&quot;uSync&quot; title=&quot;Isi absensi otomatis dari kode lembur yang shift-nya belum tercatat&quot;>⟳ Sinkronkan</button></div>
+ <div class=&quot;chips&quot; id=&quot;uchips&quot;></div>
+ <div class=&quot;wrap&quot;><table id=&quot;ufrm&quot;></table></div>
+ <div class=&quot;ed&quot;>
+  <span id=&quot;uInfo&quot;>Klik sel pada tabel</span>
+  <label><span><b>1</b> Absensi</span><select id=&quot;uKode&quot; disabled></select></label>
+  <label id=&quot;ulKet&quot; hidden><span><b>1b</b> Surat Dokter</span><select id=&quot;uKet&quot;></select></label>
+  <span id=&quot;uExtra&quot;></span>
+  <button id=&quot;uAdd&quot; disabled title=&quot;Klik sel yang sudah terisi (dipilih kembali) untuk menambah shift&quot;>＋ Tambah Shift</button>
+  <button id=&quot;uDel&quot; disabled>Hapus isi</button>
+ </div>
+ <div class=&quot;ed&quot;>
+  <b style=&quot;align-self:center;color:var(--pr)&quot;>Lembur</b>
+  <label><span><b>2</b> Tipe Lembur</span><select id=&quot;uTipe&quot; disabled></select></label>
+  <label><span><b>3</b> Kode</span><select id=&quot;uLKode&quot; disabled></select></label>
+  <label id=&quot;ulJam&quot; hidden><span><b>4</b> Jam lembur</span><select id=&quot;uJam&quot;></select></label>
+  <label id=&quot;ulAls&quot; hidden><span><b>5</b> Alasan Lembur</span><select id=&quot;uAls&quot;></select><input id=&quot;uAlsT&quot; placeholder=&quot;Ketik alasan, mis. operator yang sedang sakit&quot; hidden></label>
+  <button id=&quot;uLDel&quot; disabled>Hapus lembur</button>
+ </div>
+ <div class=&quot;chips&quot; id=&quot;udet&quot;></div>
+ <div style=&quot;display:flex;gap:8px;justify-content:space-between;align-items:center&quot;><span class=&quot;chips&quot;>Panah = pindah sel · Delete = hapus isi · Enter = ke dropdown Absensi · satu form menyimpan Absensi dan Lembur sekaligus</span>
+ <span><button id=&quot;ubX&quot;>Batal</button> <button class=&quot;pr&quot; id=&quot;ubS&quot;>Simpan</button></span></div>
+</div></div>
+
 <!-- PILIH OUTPUT -->
 <div class=&quot;ov&quot; id=&quot;pk&quot;><div class=&quot;box&quot;><b id=&quot;pkT&quot;></b>
  <div class=&quot;pick&quot;>
@@ -782,11 +819,10 @@ const NK=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const esc=s=>String(s??'').replace(/[&amp;<>&quot;]/g,c=>({'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
 const isOpen=id=>$(id).style.display==='flex',show=id=>$(id).style.display='flex',hide=id=>$(id).style.display='none';
-const anyForm=()=>isOpen('modal')||isOpen('mA');
+const anyForm=()=>isOpen('modal')||isOpen('mA')||isOpen('mU');
 const menuBtns=on=>['bAbs','bStart','bRk'].forEach(i=>{$(i).hidden=!on;$(i).disabled=!on;});
 const LOCK_PAST=false;   // true = tanggal sebelum hari ini terkunci (tidak bisa input/revisi) · false = backdate diperbolehkan
 const pastLocked=(y,m,d)=>{if(!LOCK_PAST)return false;const t=new Date();return new Date(y,m-1,d)<new Date(t.getFullYear(),t.getMonth(),t.getDate());};
-const periodLocked=(y,m)=>LOCK_PAST&amp;&amp;new Date(y,m,0)<new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
 const LOCKNOTE=LOCK_PAST?' · <b style=&quot;color:#d33&quot;>Tanggal sebelum hari ini terkunci</b>':'';
 const toast=(t,ms=2500)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',ms);};
 
@@ -870,7 +906,7 @@ const setState=v=>{$('lpStage').dataset.state=v;};
 function setHi(html){const e=$('lpHi');e.innerHTML=html;e.hidden=!html;}
 function showLogin(msg){
  TOKEN='';META=null;FILTER=null;FILTERA=null;SECT=null;DIRTY=false;
- ['modal','mA','pkA','fm','pk','sp'].forEach(hide);
+ ['modal','mA','mU','pkA','fm','pk','sp'].forEach(hide);
  IS_ADMIN=false;$('app').hidden=true;$('apv').hidden=true;$('rka').hidden=true;$('logv').hidden=true;$('rkv').hidden=true;$('stv').hidden=true;$('landing').hidden=false;$('bOut').hidden=true;$('who').textContent='';
  menuBtns(false);
  setHi('');$('lmsg').textContent='';$('lgSt').textContent='';
@@ -967,9 +1003,8 @@ function paintCell(td){
 }
 function paintTot(no){const {u}=cur();let t=0;Object.values(DRAFT[no]||{}).forEach(v=>t+=hours(u,v));
  const c=$('frm').querySelector(`td.j[data-n=&quot;${CSS.escape(no)}&quot;]`);if(c)c.textContent=t||'';}
-function openForm(){
- const {y,m,u}=cur();if(!LIST.length)return;
- if(periodLocked(y,m))return toast('Periode '+BLN[m-1]+' '+y+' sudah lewat — terkunci, tidak bisa input / revisi',4000);const n=days(y,m);
+function openFormOld(){
+ const {y,m,u}=cur();if(!LIST.length)return;const n=days(y,m);
  DRAFT={};Object.keys(ENT).forEach(no=>DRAFT[no]={...ENT[no]});DRAFTA={};Object.keys(ALS).forEach(no=>DRAFTA[no]={...ALS[no]});DIRTY=false;SEL=null;
  const rev=Object.values(ENT).some(o=>Object.keys(o).length);
  $('mt').textContent=`${rev?'Revisi':'Input'} Rekap Lembur — ${u} — ${BLN[m-1]} ${y}`;
@@ -1055,7 +1090,7 @@ $('bS').onclick=async()=>{
  $('bS').disabled=false;$('bS').textContent='Simpan';paintSync();
 };
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;
- if(isOpen('sp'))hide('sp');else if(isOpen('pk'))hide('pk');else if(isOpen('pkA'))hide('pkA');else if(isOpen('fm'))hide('fm');else if(isOpen('mA'))closeFormA();else if(isOpen('modal'))closeForm();});
+ if(isOpen('sp'))hide('sp');else if(isOpen('pk'))hide('pk');else if(isOpen('pkA'))hide('pkA');else if(isOpen('fm'))hide('fm');else if(isOpen('mU'))closeFormU();else if(isOpen('mA'))closeFormA();else if(isOpen('modal'))closeForm();});
 
 /* ================= CETAK PDF &amp; EXPORT EXCEL (2 opsi) ================= */
 let PICK='';
@@ -1492,18 +1527,20 @@ async function renderA(silent,metaP){
  const {y,m,u}=curA();if(!u||!y)return false;const sq=++ASEQ;
  $('actx').textContent=`${u} · ${BLN[m-1]} ${y}`;
  if(!silent||$('atbl').hidden){$('amsg').textContent='Memuat…';$('amsg').hidden=false;$('atbl').hidden=true;}
- let R;try{const [r0,M]=await Promise.all([run('getRekapAbsen',y,m,u),metaP||null]);if(M)META=M;R=r0;}catch(e){if(sq===ASEQ&amp;&amp;!silent){$('amsg').hidden=false;$('amsg').textContent='Gagal: '+e;}return false;}
+ let R,RL=null;try{const [r0,M,rl]=await Promise.all([run('getRekapAbsen',y,m,u),metaP||null,run('getRekap',y,m,u).catch(()=>null)]);if(M)META=M;R=r0;RL=rl;}catch(e){if(sq===ASEQ&amp;&amp;!silent){$('amsg').hidden=false;$('amsg').textContent='Gagal: '+e;}return false;}
  if(sq!==ASEQ)return false;
- ENTA=R.ent||{};KETA=R.ket||{};LEMA=R.lem||{};HKA=R.hk||{};LISTA=META.petugas.filter(p=>p.unit===u);
+ ENTA=R.ent||{};KETA=R.ket||{};LEMA=R.lem||{};HKA=R.hk||{};LENTA=(RL&amp;&amp;RL.ent)||{};LISTA=META.petugas.filter(p=>p.unit===u);
  const n=days(y,m);
- let h=`<tr><th rowspan=&quot;2&quot;>NO INDUK</th><th rowspan=&quot;2&quot;>NAMA</th><th rowspan=&quot;2&quot;>JABATAN</th><th colspan=&quot;${n}&quot;>BULAN ${BLN[m-1].toUpperCase()} ${y}</th><th colspan=&quot;6&quot;>JUMLAH</th></tr><tr>`;
+ let h=`<tr><th rowspan=&quot;2&quot;>NO INDUK</th><th rowspan=&quot;2&quot;>NAMA</th><th rowspan=&quot;2&quot;>JABATAN</th><th colspan=&quot;${n}&quot;>BULAN ${BLN[m-1].toUpperCase()} ${y}</th><th colspan=&quot;8&quot;>JUMLAH</th></tr><tr>`;
  for(let d=1;d<=n;d++)h+=`<th class=&quot;${isWe(y,m,d)?'we':''}&quot;>${d}</th>`;
- ABS.forEach(k=>h+=`<th>${k}</th>`);h+='</tr>';
- LISTA.forEach(p=>{const e=ENTA[p.noInduk]||{},ke=KETA[p.noInduk]||{},c=[0,0,0,0,0,0];
+ ABS.forEach(k=>h+=`<th>${k}</th>`);h+='<th>LEMBUR (jam)</th><th>TOTAL JAM</th></tr>';
+ LISTA.forEach(p=>{const e=ENTA[p.noInduk]||{},ke=KETA[p.noInduk]||{},le=LENTA[p.noInduk]||{},c=[0,0,0,0,0,0];let lt=0,tt=0;
   h+=`<tr><td>${esc(p.noInduk)}</td><td class=&quot;l&quot;>${esc(p.nama)}</td><td class=&quot;l&quot;>${esc(p.jabatan)}</td>`;
-  for(let d=1;d<=n;d++){const v=e[d]||'';codesA(v).forEach(x=>{const i=ABS.indexOf(x);if(i>=0)c[i]++;});
-   h+=`<td class=&quot;${v?acls(v):isWe(y,m,d)?'we':''}&quot;${v==='Skt'&amp;&amp;ke[d]?` title=&quot;${esc(ke[d])}&quot;`:''}>${esc(aTxt(v,ke[d]))}</td>`;}
-  c.forEach((x,i)=>h+=`<td class=&quot;tot&quot;${i===5&amp;&amp;x?' style=&quot;color:#d33&quot;':''}>${x||''}</td>`);h+='</tr>';});
+  for(let d=1;d<=n;d++){const v=e[d]||'',l=le[d]||'',cc={a:codesA(v),k:ke[d],l},z=calcU(u,cc);
+   cc.a.forEach(x=>{const i=ABS.indexOf(x);if(i>=0)c[i]++;});lt+=z.lh;tt+=z.tot;
+   if(!l&amp;&amp;cc.a.length<2)h+=`<td class=&quot;${v?acls(v):isWe(y,m,d)?'we':''}&quot;${v==='Skt'&amp;&amp;ke[d]?` title=&quot;${esc(ke[d])}&quot;`:''}>${esc(aTxt(v,ke[d]))}</td>`;
+   else h+=`<td class=&quot;${!v&amp;&amp;!l&amp;&amp;isWe(y,m,d)?'we':''}&quot; title=&quot;${esc(cellText(u,cc)+(z.w.length?' — ⚠ '+z.w.join('; '):''))}&quot;${z.w.length?' style=&quot;box-shadow:inset 0 0 0 2px #d33&quot;':''}>${chipsU(u,cc)}</td>`;}
+  c.forEach((x,i)=>h+=`<td class=&quot;tot&quot;${i===5&amp;&amp;x?' style=&quot;color:#d33&quot;':''}>${x||''}</td>`);h+=`<td class=&quot;tot&quot;>${lt?fJ(lt):''}</td><td class=&quot;tot&quot;>${tt?fJ(tt):''}</td></tr>`;});
  $('atbl').innerHTML=h;$('atbl').hidden=!LISTA.length;
  $('akper').textContent=`Bulan : ${BLN[m-1]}    Tahun : ${y}`;$('akop').hidden=$('afoot').hidden=!LISTA.length;
  $('amsg').hidden=!!LISTA.length;if(!LISTA.length)$('amsg').textContent='Tidak ada petugas untuk unit ini.';
@@ -1519,9 +1556,8 @@ function paintCellA(td){
 }
 function paintTotA(no){let t=0;Object.values(DRAFTB[no]||{}).forEach(v=>{t+=hadirN(v);});
  const c=$('afrm').querySelector(`td.j[data-n=&quot;${CSS.escape(no)}&quot;]`);if(c)c.textContent=t||'';}
-function openFormA(){
- const {y,m,u}=curA();if(!LISTA.length)return;
- if(periodLocked(y,m))return toast('Periode '+BLN[m-1]+' '+y+' sudah lewat — terkunci, tidak bisa input / revisi',4000);const n=days(y,m);
+function openFormAOld(){
+ const {y,m,u}=curA();if(!LISTA.length)return;const n=days(y,m);
  DRAFTB={};Object.keys(ENTA).forEach(no=>DRAFTB[no]={...ENTA[no]});DRAFTK={};Object.keys(KETA).forEach(no=>DRAFTK[no]={...KETA[no]});DIRTY=false;SELA=null;
  const rev=Object.values(ENTA).some(o=>Object.keys(o).length);
  $('amt').textContent=`${rev?'Revisi':'Input'} Absensi — ${u} — ${BLN[m-1]} ${y}`;
@@ -1636,31 +1672,250 @@ async function xlsAbs(mode){
  else{ws.mergeCells(R1,4+n,R1,NC);ws.getCell(R1,4+n).value='JUMLAH';ABS.forEach((k,i)=>ws.getCell(R2,4+n+i).value=k);}
  for(let rr=R1;rr<=R2;rr++)for(let cc=1;cc<=NC;cc++){const c=ws.getCell(rr,cc);c.font={bold:true};c.border=BD;c.alignment={horizontal:'center',vertical:'middle',wrapText:true};
   c.fill=(rr===R2&amp;&amp;cc>3&amp;&amp;cc<4+n&amp;&amp;isWe(y,m,cc-3))?fill(FC.we):HF;}
- LISTA.forEach((p,i)=>{const rn=R2+1+i,row=ws.getRow(rn),e=ENTA[p.noInduk]||{},ke=KETA[p.noInduk]||{},lm=LEMA[p.noInduk]||{},cnt=[0,0,0,0,0,0];let tot=0;
+ LISTA.forEach((p,i)=>{const rn=R2+1+i,row=ws.getRow(rn),e=ENTA[p.noInduk]||{},ke=KETA[p.noInduk]||{},lm=LEMA[p.noInduk]||{},le=LENTA[p.noInduk]||{},cnt=[0,0,0,0,0,0];let tot=0;
   [p.noInduk,p.nama,p.jabatan].forEach((v,j)=>row.getCell(j+1).value=v);
   for(let d=1;d<=n;d++){const v=e[d]||'',c=row.getCell(3+d);codesA(v).forEach(x=>{const i=ABS.indexOf(x);if(i>=0)cnt[i]++;});
-   if(jam){const jk=codesA(v).reduce((s,x)=>s+(isHadir(x)?(HKA[x]||0):0),0)+(lm[d]||0),val=hrs2(jk);tot+=jk;c.value=val||null;
-    if(v==='Alpa')c.fill=fill('FFFFC7C7');else if(lm[d])c.fill=fill(FC.lem);else if(!v&amp;&amp;isWe(y,m,d))c.fill=fill(FC.we);else if(hadirN(v))c.fill=fill(FC[codesA(v)[0]]);}
-   else{c.value=v?aTxt(v,ke[d]):null;if(v==='Skt'&amp;&amp;ke[d])c.note=ke[d];
+   const cc={a:codesA(v),k:ke[d],l:le[d]||''},zz=calcU(u,cc),lmh=cc.l?zz.lh:(lm[d]||0);
+   if(jam){const jk=zz.rh+lmh,val=hrs2(jk);tot+=jk;c.value=val||null;
+    if(v==='Alpa')c.fill=fill('FFFFC7C7');else if(lmh)c.fill=fill(FC.lem);else if(!v&amp;&amp;isWe(y,m,d))c.fill=fill(FC.we);else if(hadirN(v))c.fill=fill(FC[codesA(v)[0]]);}
+   else{const tx=cellText(u,cc);c.value=tx||null;if(v==='Skt'&amp;&amp;ke[d])c.note=ke[d];
     if(v==='Alpa'){c.fill=fill('FFFF0000');c.font={bold:true,color:{argb:'FFFFFFFF'}};}
-    else if(v)c.fill=fill(FC[codesA(v)[0]]);else if(isWe(y,m,d))c.fill=fill(FC.we);}}
+    else if(cc.l)c.fill=fill(FC.lem);else if(v)c.fill=fill(FC[codesA(v)[0]]);else if(isWe(y,m,d))c.fill=fill(FC.we);}}
   if(jam){const c=row.getCell(NC);c.value=hrs2(tot)||null;c.font={bold:true};}
   else cnt.forEach((x,k)=>{const c=row.getCell(4+n+k);c.value=x||null;c.font={bold:true,color:k===5&amp;&amp;x?{argb:'FFD32F2F'}:undefined};});
   for(let cc=1;cc<=NC;cc++){const c=row.getCell(cc);c.border=BD;c.alignment={horizontal:cc>=2&amp;&amp;cc<=3?'left':'center'};}});
- ws.columns.forEach((c,i)=>{const k=i+1;c.width=k===1?13:k===2?28:k===3?24:k>3+n?(jam?11:7):(jam?6:5);});
+ ws.columns.forEach((c,i)=>{const k=i+1;c.width=k===1?13:k===2?28:k===3?24:k>3+n?(jam?11:7):(jam?6:8);});
  const f=R2+LISTA.length+2;
  line(f,'KETERANGAN :',{b:1,l:1});
  if(jam){
-  line(f+1,'Total jam kerja per hari = jam kerja shift (P / S / M) + jam lembur pada tanggal yang sama.',{l:1});
+  line(f+1,'Total jam kerja per hari = jam shift reguler (P / S / M) + jam lembur pada tanggal yang sama. Shift yang berstatus lembur dihitung sebagai lembur saja (tidak ganda).',{l:1});
   line(f+2,`Jam kerja per shift : P = ${hrs2(HKA.P||0)} jam, S = ${hrs2(HKA.S||0)} jam, M = ${hrs2(HKA.M||0)} jam. Skt, I, Alpa = 0 jam kerja.`,{l:1});
   line(f+3,'Sel oranye = ada lembur pada tanggal tersebut. Sel merah muda = Alpa.',{l:1});
  }else{
   line(f+1,'P = Pagi · S = Siang · M = Malam · Skt = Sakit (tanda * = tanpa surat dokter) · I = Ijin (maks. 1 kali per bulan) · Alpa = tanpa keterangan (merah).',{l:1});
+  line(f+2,'P+S = dua shift pada tanggal yang sama · (L) = shift berstatus lembur · OTn = lembur kelebihan jam n jam · sel oranye = ada lembur.',{l:1});
  }
  ws.views=[{state:'frozen',xSplit:3,ySplit:R2}];
  ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
  await dl(wb,`Absensi_${jam?'Total_Jam_Kerja':'Kode'}_${u.replace(/\W+/g,'_')}_${BLN[m-1]}_${y}.xlsx`);
 }
+
+/* ================= INPUT TERPADU: ABSENSI + LEMBUR (1 sel = 1 hari 1 petugas) =================
+   Model sel : { a:[shift absensi / satu kode non-shift], k:ket Skt, l:kode lembur (maks 1 per tanggal), s:alasan lembur }
+   Tautan    : kode lembur -> shift terkait (OTd: huruf depan, mis. P-OT2 -> P; kode shift lembur: shift absensi yang jam mulainya sama)
+   Sinkron   : memilih lembur otomatis menambah shift terkait ke absensi; menghapus shift absensi menghapus lembur yang terkait;
+               Skt / I / Alpa tidak boleh bersama lembur; jam kerja reguler tidak menghitung ganda shift yang berstatus lembur. */
+const SHF=['P','S','M'];
+const absRow=(u,x)=>META.kode.find(z=>NK(z.unit)===NK(u)&amp;&amp;String(z.kode).toUpperCase()===x);
+const hasN=v=>v!==null&amp;&amp;v!==undefined&amp;&amp;v!=='';
+function lemInfo(u,l){
+ const pc=l?parseCode(u,l):null,kd=pc&amp;&amp;kodeU(u).find(x=>x.kode===pc.k);if(!kd)return null;
+ const ot=isOTd(kd.kode);let sh=null;
+ if(ot)sh=String(l)[0].toUpperCase();
+ else if(hasN(kd.jam))sh=SHF.find(x=>{const r=absRow(u,x);return r&amp;&amp;hasN(r.jam)&amp;&amp;Number(r.jam)===Number(kd.jam);})||null;
+ return {kd,pc,ot,sh,excl:!ot&amp;&amp;!!sh,h:hours(u,l)};
+}
+function calcU(u,c){
+ const a=c.a||[],shifts=a.filter(isHadir),li=c.l?lemInfo(u,c.l):null,w=[];
+ const reg=shifts.filter(x=>!(li&amp;&amp;li.excl&amp;&amp;li.sh===x));
+ const rh=reg.reduce((s,x)=>s+(HKA[x]!=null?HKA[x]:hours(u,x)),0),lh=c.l?(li?li.h:0):0;
+ if(c.l&amp;&amp;!li)w.push('Kode lembur tidak valid');
+ if(li&amp;&amp;li.sh&amp;&amp;!shifts.includes(li.sh))w.push('Shift '+li.sh+' pada lembur belum ada di absensi');
+ if(c.l&amp;&amp;a.length&amp;&amp;!shifts.length)w.push('Lembur tidak bisa bersama '+a[0]);
+ if(reg.length>1)w.push('Shift tambahan belum ditandai lembur');
+ if(a[0]==='Skt'&amp;&amp;!c.k)w.push('Skt: pilih Ada / Tidak Ada Surat Dokter');
+ return {shifts,reg,li,rh,lh,tot:rh+lh,w};
+}
+const fJ=x=>String(Math.round(x*100)/100).replace('.',',');
+function cellText(u,c){   // teks ringkas untuk tooltip / Excel: P+S(L) , P+OT2
+ const a=c.a||[];if(a.length&amp;&amp;!isHadir(a[0]))return aTxt(a[0],c.k);
+ const z=calcU(u,c),p=[];
+ SHF.forEach(x=>{if(z.shifts.includes(x))p.push(x+(z.li&amp;&amp;z.li.excl&amp;&amp;z.li.sh===x?'(L)':''));});
+ if(z.li&amp;&amp;z.li.ot)p.push('OT'+z.li.pc.h);
+ else if(c.l&amp;&amp;z.li&amp;&amp;z.li.excl&amp;&amp;!z.shifts.includes(z.li.sh))p.push(z.li.sh+'(L)');
+ else if(c.l&amp;&amp;!z.li)p.push(c.l);
+ return p.join('+');
+}
+function chipsU(u,c){
+ const a=c.a||[];if(a.length&amp;&amp;!isHadir(a[0]))return `<span class=&quot;sg ${ACL[a[0]]||''}&quot;>${esc(aTxt(a[0],c.k))}</span>`;
+ const z=calcU(u,c),p=[];
+ SHF.forEach(x=>{if(z.shifts.includes(x)){const lm=z.li&amp;&amp;z.li.excl&amp;&amp;z.li.sh===x;p.push(`<span class=&quot;sg ${ACL[x]}${lm?' lm':''}&quot;>${x}${lm?' ᴸ':''}</span>`);}});
+ if(z.li&amp;&amp;z.li.ot)p.push(`<span class=&quot;sg ot&quot;>+${fJ(z.li.pc.h)}j</span>`);
+ else if(c.l&amp;&amp;z.li&amp;&amp;z.li.excl&amp;&amp;!z.shifts.includes(z.li.sh))p.push(`<span class=&quot;sg lm&quot;>${z.li.sh} ᴸ</span>`);
+ else if(c.l&amp;&amp;!z.li)p.push(`<span class=&quot;sg ot&quot;>${esc(c.l)}</span>`);
+ return p.join('');
+}
+/* ---- state &amp; akses data ---- */
+let UTIPE='',UF=null,UL=[],U={},UO={a:'[]',l:'[]'},USEL=null,UREA=false,UPEND=false,LENTA={};
+const peekU=(no,d)=>(U[no]||{})[d]||{a:[],k:'',l:'',s:''};
+const cellU=(no,d)=>{U[no]=U[no]||{};return U[no][d]||(U[no][d]={a:[],k:'',l:'',s:''});};
+const gcU=(no,d)=>{const c=(U[no]||{})[d];if(c&amp;&amp;!c.a.length&amp;&amp;!c.l)delete U[no][d];};
+const normA=a=>{const z=[...new Set(a)],sh=z.filter(isHadir).sort((x,y)=>SHF.indexOf(x)-SHF.indexOf(y));return sh.length?sh.slice(0,3):z.slice(0,1);};
+function applyAbsen(c,na,ket,u,note){   // absensi diubah user -> lembur yang terkait ikut disesuaikan
+ c.a=normA(na);c.k=c.a[0]==='Skt'?(ket||''):'';
+ if(c.l){const li=lemInfo(u,c.l);
+  if((c.a.length&amp;&amp;!c.a.every(isHadir))||(li&amp;&amp;li.sh&amp;&amp;!c.a.includes(li.sh))){c.l='';c.s='';note.push('Lembur terkait ikut dihapus');}}
+}
+function applyLembur(c,l,s,u,note){   // lembur diubah user -> shift terkait otomatis masuk absensi
+ c.l=l;c.s=l?(s||''):'';
+ const li=l?lemInfo(u,l):null;
+ if(li&amp;&amp;li.sh&amp;&amp;!c.a.includes(li.sh)){c.a=normA([...c.a.filter(isHadir),li.sh]);note.push('Shift '+li.sh+' ditambahkan ke absensi (sinkron)');}
+}
+function buildEntriesU(){
+ const ea=[],el=[],bad=[];
+ Object.keys(U).sort().forEach(no=>Object.keys(U[no]).map(Number).sort((x,y)=>x-y).forEach(d=>{const c=U[no][d];if(!c)return;
+  if(c.a.length){const code=normA(c.a).join('+');ea.push({noInduk:no,tgl:d,kode:code,ket:code==='Skt'?(c.k||''):''});
+   if(code==='Skt'&amp;&amp;!c.k){const p=UL.find(x=>x.noInduk===no);bad.push((p?p.nama:no)+' tgl '+d+': Skt belum dipilih Ada / Tidak Ada Surat Dokter');}}
+  if(c.l)el.push({noInduk:no,tgl:d,kode:c.l,alasan:c.s||''});}));
+ return {ea,el,bad};
+}
+function warnCountU(){const {u}=UF;let n=0;Object.keys(U).forEach(no=>Object.keys(U[no]).forEach(d=>{if(calcU(u,U[no][d]).w.length)n++;}));return n;}
+function paintWarnU(){const n=warnCountU();$('uwarn').innerHTML=n?`<b style=&quot;color:#d33&quot;>⚠ ${n} sel perlu dicek</b> (arahkan kursor ke sel)`:'';}
+/* ---- grid ---- */
+function paintCellU(td){
+ const {y,m,u}=UF,no=td.dataset.n,d=+td.dataset.d,c=peekU(no,d),z=calcU(u,c),has=c.a.length||c.l;
+ td.className='cell u '+(!has&amp;&amp;isWe(y,m,d)?'we ':'')+(td===USEL?'sel ':'')+(pastLocked(y,m,d)?'lock ':'')+(z.w.length?'warn':'');
+ td.innerHTML=has?chipsU(u,c):'';td.title=has?(cellText(u,c)+(z.w.length?' — ⚠ '+z.w.join('; '):'')):'';
+}
+function paintTotU(no){
+ const {u}=UF;let h=0,l=0,t=0;Object.values(U[no]||{}).forEach(c=>{const z=calcU(u,c);h+=z.shifts.length;l+=z.lh;t+=z.tot;});
+ const q=k=>$('ufrm').querySelector(`td.${k}[data-n=&quot;${CSS.escape(no)}&quot;]`);
+ if(q('jh'))q('jh').textContent=h||'';if(q('jl'))q('jl').textContent=l?fJ(l):'';if(q('jt'))q('jt').textContent=t?fJ(t):'';
+}
+function repaintU(no,d){const td=$('ufrm').querySelector(`td[data-n=&quot;${CSS.escape(no)}&quot;][data-d=&quot;${d}&quot;]`);if(td)paintCellU(td);paintTotU(no);paintWarnU();}
+async function openFormU(f){
+ const {y,m,u}=f;FILTER=FILTERA={y,m,u};
+ toast('Memuat data absensi &amp; lembur…');
+ let RA,RL;try{[RA,RL]=await Promise.all([run('getRekapAbsen',y,m,u),run('getRekap',y,m,u)]);}catch(e){return alert('Gagal memuat data: '+e);}
+ ENTA=RA.ent||{};KETA=RA.ket||{};LEMA=RA.lem||{};HKA=RA.hk||{};ENT=RL.ent||{};ALS=RL.als||{};LENTA=ENT;
+ UL=META.petugas.filter(p=>p.unit===u);LISTA=UL;LIST=UL;UF={y,m,u};
+ U={};const nos=new Set([...UL.map(p=>p.noInduk),...Object.keys(ENTA),...Object.keys(ENT)]);
+ nos.forEach(no=>{U[no]={};new Set([...Object.keys(ENTA[no]||{}),...Object.keys(ENT[no]||{})]).forEach(d=>{
+  U[no][d]={a:normA(codesA((ENTA[no]||{})[d])),k:(KETA[no]||{})[d]||'',l:(ENT[no]||{})[d]||'',s:(ALS[no]||{})[d]||''};});});
+ const b0=buildEntriesU();UO={a:JSON.stringify(b0.ea),l:JSON.stringify(b0.el)};   // pembanding: hanya bagian yang berubah yang dikirim
+ // sinkron otomatis data lama: lembur yang shift-nya belum ada di absensi (sel lampau terkunci tidak disentuh)
+ let synced=0;nos.forEach(no=>Object.keys(U[no]).forEach(d=>{const c=U[no][d];if(pastLocked(y,m,+d))return;
+  const li=c.l?lemInfo(u,c.l):null;if(li&amp;&amp;li.sh&amp;&amp;!c.a.includes(li.sh)&amp;&amp;(!c.a.length||c.a.every(isHadir))){c.a=normA([...c.a,li.sh]);synced++;}}));
+ DIRTY=synced>0;USEL=null;UREA=false;UPEND=false;
+ const rev=Object.values(ENTA).some(o=>Object.keys(o).length)||Object.values(ENT).some(o=>Object.keys(o).length);
+ $('umt').textContent=`${rev?'Revisi':'Input'} Absensi + Lembur — ${u} — ${BLN[m-1]} ${y}`;
+ $('uchips').innerHTML='<b>P</b> Pagi · <b>S</b> Siang · <b>M</b> Malam · <b>Skt</b> Sakit · <b>I</b> Ijin · <b style=&quot;color:#d33&quot;>Alpa</b> — chip <b class=&quot;sg lm&quot; style=&quot;display:inline-block&quot;>S ᴸ</b> = shift yang berstatus lembur · <b class=&quot;sg ot&quot; style=&quot;display:inline-block&quot;>+2j</b> = lembur kelebihan jam · <b>Tambah Shift</b> = shift ke-2 / ke-3 pada tanggal yang sama (aktif jika sel sudah terisi &amp; dipilih kembali)'+LOCKNOTE;
+ let h='<tr><th>NAMA</th>';for(let d=1;d<=days(y,m);d++)h+=`<th class=&quot;${isWe(y,m,d)?'we':''}&quot;>${d}</th>`;h+='<th>SHIFT</th><th>LEMBUR (jam)</th><th>TOTAL JAM</th></tr>';
+ UL.forEach((p,ri)=>{h+=`<tr class=&quot;${ri%2?'alt':''}&quot;><td class=&quot;l&quot;>${esc(p.nama)}</td>`;
+  for(let d=1;d<=days(y,m);d++)h+=`<td tabindex=&quot;0&quot; data-n=&quot;${esc(p.noInduk)}&quot; data-d=&quot;${d}&quot;></td>`;
+  h+=`<td class=&quot;tot jh&quot; data-n=&quot;${esc(p.noInduk)}&quot;></td><td class=&quot;tot jl&quot; data-n=&quot;${esc(p.noInduk)}&quot;></td><td class=&quot;tot jt&quot; data-n=&quot;${esc(p.noInduk)}&quot;></td></tr>`;});
+ $('ufrm').innerHTML=h;$('ufrm').querySelectorAll('td[data-n][data-d]').forEach(paintCellU);UL.forEach(p=>paintTotU(p.noInduk));paintWarnU();
+ loadEditorU();show('mU');paintSync();
+ if(synced)toast(`${synced} sel disinkronkan otomatis dari kode lembur (belum tersimpan)`,4500);
+}
+const openForm=()=>openFormU(cur()),openFormA=()=>openFormU(curA());
+function selCellU(td){const o=USEL;USEL=td;UPEND=false;UTIPE='';UREA=!!(peekU(td.dataset.n,+td.dataset.d).a.length||peekU(td.dataset.n,+td.dataset.d).l);if(o&amp;&amp;o!==td)paintCellU(o);paintCellU(td);loadEditorU();}
+/* ---- editor ---- */
+const U_IDS=['uKode','uKet','uTipe','uLKode','uJam','uAls','uAlsT','uAdd','uDel','uLDel'];
+function fillLKodeU(t,sel){
+ const {u}=UF;
+ $('uLKode').innerHTML='<option value=&quot;&quot;>— pilih Kode —</option>'+kodeU(u).filter(k=>k.tipe===t).map(k=>`<option value=&quot;${esc(k.kode)}&quot;${k.kode===sel?' selected':''}>${esc(k.kode)}${hasN(k.jam)&amp;&amp;hasN(k.keluar)?' · '+hh(k.jam)+'–'+hh(k.keluar):''}</option>`).join('');
+ $('uLKode').disabled=!t;
+}
+function loadEditorU(){
+ const td=USEL;
+ if(!td){U_IDS.forEach(i=>$(i).disabled=true);$('uInfo').textContent='Klik sel pada tabel';$('uKode').innerHTML=$('uTipe').innerHTML=$('uLKode').innerHTML='';$('uExtra').innerHTML='';$('ulKet').hidden=$('ulJam').hidden=$('ulAls').hidden=true;$('udet').textContent='Pilih sel, lalu isi Absensi dan (jika ada) Lembur — keduanya tersimpan sekaligus.';return;}
+ const {y,m,u}=UF,no=td.dataset.n,d=+td.dataset.d,p=UL.find(x=>x.noInduk===no),c=peekU(no,d);
+ $('uInfo').textContent=`${p.nama} · tgl ${d}`;
+ if(pastLocked(y,m,d)){U_IDS.forEach(i=>$(i).disabled=true);$('uKode').innerHTML=$('uTipe').innerHTML=$('uLKode').innerHTML='';$('uExtra').innerHTML='';$('ulKet').hidden=$('ulJam').hidden=$('ulAls').hidden=true;
+  $('udet').innerHTML=`<b>${esc(p.nama)}</b> · tgl ${d}${c.a.length||c.l?' · '+esc(cellText(u,c)):''}<br><span style=&quot;color:#d33&quot;>Tanggal lampau terkunci — tidak dapat diinput / diubah.</span>`;return;}
+ const cs=c.a,ex=cs.slice(1),usedI=Object.keys(U[no]||{}).some(x=>+x!==d&amp;&amp;(U[no][x].a||[])[0]==='I');
+ // --- absensi
+ $('uKode').innerHTML='<option value=&quot;&quot;>— kosong —</option>'+ABS.map(k=>`<option value=&quot;${k}&quot;${k===cs[0]?' selected':''}${((k==='I'&amp;&amp;usedI)||ex.includes(k))?' disabled':''}>${k} — ${ABN[k]}${k==='I'&amp;&amp;usedI?' (sudah dipakai bulan ini)':''}</option>`).join('');
+ $('uKode').disabled=false;$('uDel').disabled=false;
+ $('uExtra').innerHTML=ex.concat(UPEND?['']:[]).map((x,i)=>`<label><span><b>+</b> Shift ke-${i+2}</span><select data-x=&quot;${i+1}&quot;><option value=&quot;&quot;>${x?'— hapus shift ini —':'— pilih shift —'}</option>${SHF.filter(k=>k===x||!cs.includes(k)).map(k=>`<option value=&quot;${k}&quot;${k===x?' selected':''}>${k} — ${ABN[k]}</option>`).join('')}</select></label>`).join('');
+ const can=UREA&amp;&amp;cs.length>0&amp;&amp;cs.every(isHadir)&amp;&amp;cs.length+(UPEND?1:0)<3;$('uAdd').disabled=!can;
+ $('uAdd').title=can?'Tambah shift lain pada tanggal ini':!cs.length?'Isi sel ini dulu, lalu klik sel kembali':!cs.every(isHadir)?'Tambah shift hanya untuk P / S / M':cs.length+(UPEND?1:0)>=3?'Maksimal 3 shift per tanggal':'Klik sel ini kembali untuk mengaktifkan Tambah Shift';
+ $('uKet').innerHTML='<option value=&quot;&quot;>— pilih —</option>'+KETS.map(k=>`<option${k===c.k?' selected':''}>${k}</option>`).join('');$('ulKet').hidden=cs[0]!=='Skt';
+ // --- lembur (hanya bila absensi kosong / shift hadir)
+ const ok=!cs.length||cs.every(isHadir),pc=c.l?parseCode(u,c.l):null,kd=pc&amp;&amp;kodeU(u).find(x=>x.kode===pc.k);
+ const tp=kd?kd.tipe:UTIPE;
+ $('uTipe').innerHTML='<option value=&quot;&quot;>— tidak ada lembur —</option>'+tipesU(u).map(t=>`<option value=&quot;${esc(t)}&quot;${tp===t?' selected':''}>${esc(t)}</option>`).join('');
+ $('uTipe').disabled=!ok;fillLKodeU(tp,kd?kd.kode:'');if(!ok)$('uLKode').disabled=true;
+ const hs=[0.5,1,1.5,2,2.5,3,3.5,4];if(pc&amp;&amp;pc.h&amp;&amp;!hs.includes(pc.h))hs.push(pc.h);
+ $('uJam').innerHTML=hs.map(x=>`<option${pc&amp;&amp;pc.h===x?' selected':''}>${x}</option>`).join('');$('uJam').disabled=!ok;$('ulJam').hidden=!(kd&amp;&amp;isOTd(kd.kode));
+ $('uLDel').disabled=!c.l;
+ const opts=kd?alsOpts(kd.tipe):[];
+ if(kd&amp;&amp;opts.length){const man=opts.find(isMan);let cv=c.s||'';if(cv&amp;&amp;!opts.includes(cv)&amp;&amp;!man){c.s='';cv='';}const am=cv&amp;&amp;!opts.includes(cv);
+  $('uAls').innerHTML='<option value=&quot;&quot;>— pilih Alasan —</option>'+opts.map(o=>`<option value=&quot;${esc(o)}&quot;${(o===cv||(am&amp;&amp;o===man))?' selected':''}>${esc(o)}</option>`).join('');
+  $('uAlsT').hidden=!am;$('uAlsT').value=am?cv:'';$('ulAls').hidden=false;$('uAls').disabled=$('uAlsT').disabled=false;}
+ else $('ulAls').hidden=true;
+ showDetU();
+}
+function showDetU(){
+ const td=USEL;if(!td)return;const {y,m,u}=UF,no=td.dataset.n,d=+td.dataset.d,p=UL.find(x=>x.noInduk===no),c=peekU(no,d);
+ if(!c.a.length&amp;&amp;!c.l){$('udet').innerHTML=`<b>${esc(p.nama)}</b> · tgl ${d}: isi Absensi (P / S / M / Skt / I / Alpa), lalu tambahkan Lembur bila ada`;return;}
+ const z=calcU(u,c),jt=x=>{const r=absRow(u,x);return x+(r&amp;&amp;hasN(r.jam)&amp;&amp;hasN(r.keluar)?' ('+hh(r.jam)+'–'+hh(r.keluar)+')':'');};
+ let t=`<b>${esc(p.nama)}</b> · tgl ${d} · <b>${esc(cellText(u,c))}</b><br>`;
+ if(c.a.length&amp;&amp;!isHadir(c.a[0]))t+=`Absensi: ${ABN[c.a[0]]}${c.a[0]==='Skt'?' · '+(c.k?`<b>${esc(c.k)}</b>`:'<span style=&quot;color:#d33&quot;>pilih Ada / Tidak Ada Surat Dokter</span>'):''}`;
+ else{t+=`Reguler: ${z.reg.length?z.reg.map(jt).join(', '):'–'} · ${fJ(z.rh)} jam`;
+  if(c.l&amp;&amp;z.li){const k=z.li.kd,ot=z.li.ot,dur=ot?z.li.pc.h:durKode(k),day=d+(ot&amp;&amp;k.kode[0].toUpperCase()==='M'?1:0),st=k.jam||0;
+   t+=`<br>Lembur: <b>${esc(k.tipe)}</b> · ${esc(c.l)} · ${fmtDT(y,m,day,st)} s/d ${fmtDT(y,m,day,st+dur)} · ${fmtD(dur)}${z.li.excl?` <i>(shift ${z.li.sh} dihitung lembur, bukan reguler)</i>`:ot?` <i>(menyambung shift ${z.li.sh})</i>`:''}`;}
+  t+=`<br>Total jam kerja hari ini: <b>${fJ(z.tot)}</b> jam`;}
+ if(z.w.length)t+=`<br><span style=&quot;color:#d33&quot;>⚠ ${z.w.map(esc).join(' · ')}</span>`;
+ $('udet').innerHTML=t;
+}
+function afterEditU(no,d,note){gcU(no,d);DIRTY=true;repaintU(no,d);loadEditorU();paintSync();if(note&amp;&amp;note.length)toast(note.join(' · '),3500);}
+const uCtx=()=>{const td=USEL;if(!td)return null;const no=td.dataset.n,d=+td.dataset.d,{y,m,u}=UF;if(pastLocked(y,m,d)){toast('Tanggal lampau terkunci, tidak dapat diubah');return null;}return {no,d,u,c:cellU(no,d)};};
+$('uKode').onchange=()=>{const x=uCtx();if(!x)return;const k=$('uKode').value,note=[];
+ applyAbsen(x.c,k?(isHadir(k)?[k,...x.c.a.slice(1).filter(z=>z!==k)]:[k]):[],k==='Skt'?$('uKet').value:'',x.u,note);UPEND=false;afterEditU(x.no,x.d,note);
+ if(k==='Skt'&amp;&amp;!$('uKet').value)$('uKet').focus();};
+$('uKet').onchange=()=>{const x=uCtx();if(!x)return;x.c.k=$('uKet').value;afterEditU(x.no,x.d);};
+$('uExtra').onchange=e=>{const x=uCtx();if(!x||!e.target.matches('select'))return;const note=[];
+ applyAbsen(x.c,[x.c.a[0],...[...$('uExtra').querySelectorAll('select')].map(s=>s.value)].filter(Boolean),'',x.u,note);UPEND=false;afterEditU(x.no,x.d,note);};
+$('uAdd').onclick=()=>{if($('uAdd').disabled)return;UPEND=true;loadEditorU();const s=$('uExtra').querySelector('label:last-child select');if(s)s.focus();};
+$('uDel').onclick=()=>{const x=uCtx();if(!x)return;x.c.a=[];x.c.k='';x.c.l='';x.c.s='';UREA=false;UPEND=false;UTIPE='';afterEditU(x.no,x.d);USEL.focus();};
+function lemValU(){const k=$('uLKode').value;return k?(isOTd(k)?k[0].toUpperCase()+'-OT'+$('uJam').value:k):'';}
+function applyLemU(keepAls){const x=uCtx();if(!x){loadEditorU();return;}const note=[];applyLembur(x.c,lemValU(),keepAls?x.c.s:'',x.u,note);afterEditU(x.no,x.d,note);}
+$('uTipe').onchange=()=>{const {u}=UF,t=$('uTipe').value;UTIPE=t;fillLKodeU(t,'');const ks=kodeU(u).filter(k=>k.tipe===t);if(ks.length===1)$('uLKode').value=ks[0].kode;if($('uLKode').value&amp;&amp;isOTd($('uLKode').value))$('uJam').value='1';applyLemU(false);};
+$('uLKode').onchange=()=>{if(isOTd($('uLKode').value)&amp;&amp;$('ulJam').hidden)$('uJam').value='1';applyLemU(false);};
+$('uJam').onchange=()=>applyLemU(true);
+$('uLDel').onclick=()=>{const x=uCtx();if(!x)return;x.c.l='';x.c.s='';afterEditU(x.no,x.d);};
+function setAlsU(v){const x=uCtx();if(!x)return;x.c.s=v;DIRTY=true;showDetU();paintSync();}
+$('uAls').onchange=()=>{const v=$('uAls').value;if(isMan(v)){$('uAlsT').hidden=false;$('uAlsT').value='';setAlsU('');$('uAlsT').focus();}else{$('uAlsT').hidden=true;setAlsU(v);}};
+$('uAlsT').oninput=()=>setAlsU($('uAlsT').value.trim());
+$('ufrm').onfocusin=e=>{const td=e.target.closest&amp;&amp;e.target.closest('td[data-d]');if(td)selCellU(td);};
+$('ufrm').onclick=e=>{const td=e.target.closest&amp;&amp;e.target.closest('td[data-d]');if(!td)return;if(td!==USEL)selCellU(td);else{const c=peekU(td.dataset.n,+td.dataset.d);UREA=!!(c.a.length||c.l);loadEditorU();}};
+$('ufrm').onkeydown=e=>{
+ const td=e.target.closest&amp;&amp;e.target.closest('td[data-d]');if(!td)return;
+ const mv={ArrowLeft:[0,-1],ArrowRight:[0,1],ArrowUp:[-1,0],ArrowDown:[1,0]}[e.key];
+ if(mv){e.preventDefault();const tr=td.parentElement,i=[...tr.children].indexOf(td);const row=mv[0]?(mv[0]<0?tr.previousElementSibling:tr.nextElementSibling):tr;const nx=row&amp;&amp;row.children[i+mv[1]];if(nx&amp;&amp;nx.dataset.d)nx.focus();}
+ else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();$('uDel').click();}
+ else if(e.key==='Enter'){e.preventDefault();$('uKode').focus();}
+};
+$('uSync').onclick=()=>{
+ const {y,m,u}=UF;let n=0,manual=0;
+ Object.keys(U).forEach(no=>Object.keys(U[no]).forEach(d=>{const c=U[no][d];if(pastLocked(y,m,+d))return;const li=c.l?lemInfo(u,c.l):null;
+  if(li&amp;&amp;li.sh&amp;&amp;!c.a.includes(li.sh)){if(!c.a.length||c.a.every(isHadir)){c.a=normA([...c.a,li.sh]);n++;}else manual++;}}));
+ if(n)DIRTY=true;UL.forEach(p=>{Object.keys(U[p.noInduk]||{}).forEach(d=>repaintU(p.noInduk,d));paintTotU(p.noInduk);});paintWarnU();paintSync();loadEditorU();
+ toast(n||manual?`${n} sel disinkronkan${manual?` · ${manual} perlu dicek manual`:''}`:'Semua sel sudah sinkron');
+};
+function closeFormU(){if(DIRTY&amp;&amp;!confirm('Perubahan belum disimpan. Tutup form?'))return;DIRTY=false;hide('mU');paintSync();}
+$('ubX').onclick=closeFormU;
+$('ubS').onclick=async()=>{
+ const {y,m,u}=UF,{ea,el,bad}=buildEntriesU();
+ if(bad.length)return alert('Lengkapi dulu:\n'+bad.join('\n'));
+ const ca=JSON.stringify(ea)!==UO.a,cl=JSON.stringify(el)!==UO.l;
+ if(!ca&amp;&amp;!cl){DIRTY=false;hide('mU');paintSync();return toast('Tidak ada perubahan untuk disimpan');}
+ const wn=warnCountU();if(wn&amp;&amp;!confirm(`Ada ${wn} sel bertanda ⚠ (belum sinkron / belum lengkap). Tetap simpan?`))return;
+ $('ubS').disabled=true;$('ubS').textContent='Menyimpan…';const msg=[];
+ try{
+  if(ca){const r=await run('saveAbsen',{tahun:y,bulan:m,unit:u,entries:ea});
+   if(!r.ok){alert('Gagal simpan Absensi (Lembur belum diproses):\n'+r.errors.join('\n'));throw 0;}
+   UO.a=JSON.stringify(ea);msg.push(`Absensi ${r.saved}`);if(r.logWarn)alert('Absensi tersimpan, tetapi Log Input Absensi gagal dicatat:\n'+r.logWarn);}
+  if(cl){const r=await run('saveEntries',{tahun:y,bulan:m,unit:u,entries:el});
+   if(!r.ok){alert((ca?'Absensi sudah tersimpan, tetapi Lembur gagal:\n':'Gagal simpan Lembur:\n')+r.errors.join('\n'));throw 0;}
+   UO.l=JSON.stringify(el);msg.push(`Lembur ${r.saved}`);if(r.warn)alert('Lembur tersimpan, tetapi sheet form_output belum terisi:\n'+r.warn);if(r.logWarn)alert('Lembur tersimpan, tetapi Log Input gagal dicatat:\n'+r.logWarn);}
+  DIRTY=false;hide('mU');toast('Tersimpan: '+msg.join(' · '));
+  try{await renderA(true);}catch(e){}try{await render(true);}catch(e){}
+ }catch(e){if(e)alert('Error: '+e);}
+ $('ubS').disabled=false;$('ubS').textContent='Simpan';paintSync();
+};
 
 /* ================= REKAPITULASI &amp; CHART ABSENSI ================= */
 let STA=null,CA1=null,CA2=null,STAL=[],RSA={k:'tot',d:-1},RASEQ=0;
@@ -1905,7 +2160,7 @@ select option{background:var(--pan-solid);color:var(--ink)}
 .day.w b,.day.w small{color:var(--vio)}
 .day.c b,.day.c small{color:var(--amb)}
 .day.h b,.day.h small{color:var(--red)}
-.day:hover:not(.sel):not(.lock):not(.off):not(.oth):not(.past){border-color:var(--mint2);background:var(--hov)}
+.day:hover:not(.sel):not(.lock):not(.off):not(.oth){border-color:var(--mint2);background:var(--hov)}
 .day.oth{opacity:.35;cursor:default}
 .day.today b{background:var(--g-mint);color:var(--on-mint)!important}
 .day.off{background:repeating-linear-gradient(135deg,var(--hatch-a) 0 6px,var(--hatch-b) 6px 12px);cursor:not-allowed}
@@ -1915,9 +2170,6 @@ select option{background:var(--pan-solid);color:var(--ink)}
 .day.off.h b,.day.off.h small{color:var(--red)}
 .day.off.c{background:repeating-linear-gradient(135deg,rgba(246,199,104,.07) 0 6px,rgba(246,199,104,.18) 6px 12px)}
 .day.off.c b,.day.off.c small{color:var(--amb)}
-.day.past{opacity:.55;background:repeating-linear-gradient(135deg,var(--hatch-a) 0 6px,var(--hatch-b) 6px 12px);cursor:not-allowed}
-.day.past b,.day.past small{color:var(--mut)}
-.day.past.today b{color:var(--on-mint)}
 .day.lock{background:rgba(255,107,129,.12);border-color:rgba(255,107,129,.5);cursor:not-allowed}
 .day.lock b,.day.lock small{color:var(--red)}
 .day.sel{background:var(--g-vio);border-color:transparent;box-shadow:0 6px 16px rgba(100,64,250,.4)}
@@ -2039,7 +2291,6 @@ tr.pick td{background:rgba(0,143,199,.2)}
   .day.h::after{background:var(--red)}
   .day.c::after{background:var(--amb)}
   .day.sel.h::after,.day.sel.c::after{background:#fff}
-  .day.past::after{content:&quot;🔒&quot;;width:auto;height:auto;font-size:9px;line-height:1;margin-left:-6px;bottom:3px;background:none}
   .day.lock::after{content:&quot;🔒&quot;;width:auto;height:auto;font-size:9px;line-height:1;margin-left:-6px;bottom:3px;background:none}
   .day.oth::after{display:none}
   .leg .tot{margin-left:0;width:100%}
@@ -2214,12 +2465,6 @@ const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
 /* ================== STATE ================== */
 const now=new Date();
-/* ===== MODE INPUT PERIODE LAMPAU =====
-   true  = tanggal sebelum hari ini TERKUNCI (tidak bisa dipilih)  -> versi &quot;Kunci Lampau&quot;
-   false = tanggal lampau (backdate) masih bisa dipilih            -> versi &quot;Backdate&quot; */
-const LOCK_PAST=false;
-const today0=()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())};
-const isPast=k=>LOCK_PAST&amp;&amp;dt(k)<today0();
 const S={sel:new Set(),view:{y:now.getFullYear(),m:now.getMonth()},people:[],ttd:[],ket:[],remote:[],local:lsGet('cuti_rekap_v1',[]),p:null,ev:[],demo:false,fUnit:'',charts:{}};
 
 /* ================== DATA SHEET ================== */
@@ -2239,7 +2484,7 @@ function mapRows({h,rows},spec){
 }
 const SPEC_P={nama:['nama','namapetugas','namalengkap','petugas','namapegawai'],noinduk:['noinduk','nip','induk','nik','noindukpegawai','noindukkaryawan'],jabatan:['jabatan'],divisi:['divisi','bagian','seksi'],unit:['unit','penempatan','lokasi','unitkerja'],shift:['shift','statusshift','polakerja','jeniskerja','jenis','status','kategori','jamkerja','shiftnonshift','statuskerja','kategorishift'],gender:['jeniskelamin','jk','gender','kelamin','lp','sex','lakilakiperempuan']};
 const SPEC_T={divisi:['unit','divisi','unitkerja','penempatan'],t1:['ttd1'],u1:['unitttd1'],t2:['ttd2'],u2:['unitttd2'],t3:['ttd3'],u3:['unitttd3'],t4:['ttd4'],u4:['unitttd4']};
-const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],noinduk:['noinduk','nip','nomorinduk'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
+const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
 
 // Normalisasi kategori dari sheet tenaga_kerja: 'Shift' / 'Non Shift' / 'Non-Shift' / 'NS' dst.
 const polaOf=v=>{const n=N(v);if(!n)return'';if(/^(ns|nonshift|noshift|tidakshift|reguler|regular|normal|harian|office)/.test(n)||n.includes('non'))return'Nonshift';if(n=='s'||n.includes('shift'))return'Shift';return''};
@@ -2297,8 +2542,7 @@ function fillKet(){
   $('#fKet').innerHTML=CUTI.filter(c=>!c.g||c.g==g).map(c=>{const nm=S.ket.find(k=>ruleOf(k)===c)||c.name,us=ketUsed(c);return `<option value=&quot;${esc(nm)}&quot;${us?' disabled':''}>${esc(nm)}${us?' (sudah pernah diajukan)':''}</option>`}).join('');
   evRender();
 }
-const samePers=r=>(r.noinduk&amp;&amp;S.p.noinduk)?N(r.noinduk)==N(S.p.noinduk):N(r.nama)==N(S.p.nama);
-function ketUsed(c){return !!S.p&amp;&amp;c.id!='tahunan'&amp;&amp;all().some(r=>samePers(r)&amp;&amp;(ruleOf(r.ket)||{}).id==c.id)}
+function ketUsed(c){return !!S.p&amp;&amp;c.id!='tahunan'&amp;&amp;all().some(r=>N(r.nama)==N(S.p.nama)&amp;&amp;(ruleOf(r.ket)||{}).id==c.id)}
 // Segarkan status &quot;sudah diajukan&quot; tanpa mengubah pilihan yang masih sah (dipanggil setelah sinkron rekap)
 function refreshKet(){
   const cv=$('#fKet').value;fillKet();
@@ -2427,7 +2671,6 @@ function locked(d){const t=new Set(S.sel);t.add(iso(d));return !validShift(t)}
 function status(d){
   const k=iso(d);
   if(S.sel.has(k))return'sel';
-  if(isPast(k))return'past';
   if(isCal())return'ok';
   if(!shift()){const wk=d.getDay()==0||d.getDay()==6;if(wk||hday(k))return'off';return'ok'}
   return locked(d)?'lock':'ok';
@@ -2443,13 +2686,12 @@ function renderCal(){
     const d=add(start,i),k=iso(d),oth=d.getMonth()!=m,st=status(d),wk=d.getDay()==0||d.getDay()==6;
     if(!oth){if(st=='lock')lk++;if(st=='off')off++}
     const hd=hday(k),tp=hd?hd[1]:'',cls=['day',oth?'oth':'',wk?'w':'',tp=='n'?'h':tp?'c':'',k==iso(new Date())?'today':'',st=='ok'?'':st].join(' ');
-    const lab=st=='sel'?'Cuti':st=='past'?'🔒 Lewat':st=='lock'?'🔒 Lock':hd?({n:'Libur Nas.',c:'Cuti Bersama',f:'Fakultatif'})[tp]:(st=='off'||wk)?'Akhir pekan':'Buka';
+    const lab=st=='sel'?'Cuti':st=='lock'?'🔒 Lock':hd?({n:'Libur Nas.',c:'Cuti Bersama',f:'Fakultatif'})[tp]:(st=='off'||wk)?'Akhir pekan':'Buka';
     h+=`<div class=&quot;${cls}&quot; data-k=&quot;${k}&quot; title=&quot;${esc(hd?hd[0]:'')}&quot;><b>${d.getDate()}</b><small>${lab}</small></div>`;
   }
   $('#cal').innerHTML=h;
   const pre=y+'-'+p2(m+1),hm=holMap(y),hl=Object.keys(hm).filter(k=>k.startsWith(pre)).sort().map(k=>`<b>${dt(k).getDate()} ${BS[m]}</b> ${esc(hm[k][0])}${hm[k][1]=='f'?' (fakultatif)':''}`);
   $('#holList').innerHTML='Libur &amp;amp; cuti bersama '+BLN[m]+' (kebijakan '+provOf(S.p)+'): '+(hl.length?hl.join(' · '):'tidak ada')+(isCal()?' <i>('+esc(rule().name)+' dihitung '+rule().q+' hari kalender; libur &amp;amp; akhir pekan ikut terhitung)</i>':shift()?' <i>(tetap bisa dipilih untuk shift)</i>':' <i>(tidak bisa dipilih untuk nonshift)</i>')+(holPartial(y)?'<br>⚠ Libur keagamaan &amp;amp; cuti bersama '+y+(HOLP[y]?' sedang diambil…':' belum tersedia (hanya libur tetap yang tampil); isi lewat HOLX di kode.'):'');
-  if(LOCK_PAST)$('#holList').insertAdjacentHTML('beforeend','<br>🔒 <b>Tanggal sebelum hari ini terkunci</b> dan tidak bisa dipilih.');
   $('#lkN').textContent=lk;$('#lkLeg').style.display=shift()&amp;&amp;!isCal()?'':'none';
   $('#offLeg').style.display=shift()||isCal()?'none':'';
   $('#tot').innerHTML=`Total terpilih: ${S.sel.size} hari ${isCal()?'kalender':'kerja'} <small>(maks. ${limit()} hari)</small>`;
@@ -2458,7 +2700,6 @@ function renderCal(){
 }
 function trySel(d,quiet){
   const k=iso(d),st=status(d);
-  if(st=='past'){if(!quiet)toast('Tanggal sebelum hari ini terkunci dan tidak bisa dipilih.');return false}
   if(st=='lock'){if(!quiet)toast('Shift: maksimal 6 hari berturut-turut, lalu 2 hari berikutnya tidak bisa dipilih.');return false}
   if(st=='off'){if(!quiet)toast('Nonshift: Sabtu, Minggu, libur nasional, cuti bersama, dan libur fakultatif tidak bisa dipilih.');return false}
   if(S.sel.size>=limit()){if(!quiet)toast(`Maksimal ${limit()} hari cuti.`);return false}
@@ -2468,7 +2709,6 @@ $('#cal').addEventListener('click',e=>{
   const c=e.target.closest('.day');if(!c||c.classList.contains('oth'))return;
   const k=c.dataset.k;
   if(isCal()){
-    if(isPast(k)){toast('Tanggal sebelum hari ini terkunci dan tidak bisa dipilih.');return}
     const R=rule(),MLH=R.q;
     if(R.g&amp;&amp;(!S.p||S.p.gender!=R.g)){toast(R.name+' hanya untuk petugas '+(R.g=='P'?'perempuan':'laki-laki')+'.');return}
     if(S.sel.size&amp;&amp;[...S.sel].sort()[0]==k){S.sel.clear();renderCal();return}
@@ -2554,7 +2794,6 @@ function buildRec(){
   if(ketUsed(rule())){toast(rule().name+' sudah pernah diajukan oleh petugas ini; jatah berlaku per pengajuan.');return null}
   if(needEv()&amp;&amp;!S.ev.length){toast('Upload eviden terlebih dahulu untuk '+rule().name+'.');return null}
   if(!S.sel.size){toast('Pilih minimal satu tanggal cuti pada kalender.');return null}
-  if(LOCK_PAST&amp;&amp;[...S.sel].some(isPast)){S.sel.clear();renderCal();toast('Ada tanggal yang sudah lewat dan terkunci. Pilih ulang tanggal cuti.');return null}
   const tgl=iso(new Date()),dates=[...S.sel].sort(),jumlah=dates.length,tah=isTahunan(),u=used(S.p,dt(dates[0]).getFullYear());
   return{id:Date.now(),nomor:'',nama:S.p.nama,noinduk:S.p.noinduk,jabatan:S.p.jabatan,divisi:S.p.divisi,unit:S.p.unit,pola:$('#fPola').value,ket:$('#fKet').value,dates,mulai:dates[0],selesai:dates[dates.length-1],jumlah,lamanya:lam({mulai:dates[0],selesai:dates[dates.length-1]}),tglAjuan:tgl,sisa:Math.max(0,JATAH-u-(tah?jumlah:0)),ttd:ttdFor(S.p),ev:S.ev.slice()};
 }
