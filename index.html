@@ -786,6 +786,7 @@ const anyForm=()=>isOpen('modal')||isOpen('mA');
 const menuBtns=on=>['bAbs','bStart','bRk'].forEach(i=>{$(i).hidden=!on;$(i).disabled=!on;});
 const LOCK_PAST=false;   // true = tanggal sebelum hari ini terkunci (tidak bisa input/revisi) · false = backdate diperbolehkan
 const pastLocked=(y,m,d)=>{if(!LOCK_PAST)return false;const t=new Date();return new Date(y,m-1,d)<new Date(t.getFullYear(),t.getMonth(),t.getDate());};
+const periodLocked=(y,m)=>LOCK_PAST&amp;&amp;new Date(y,m,0)<new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
 const LOCKNOTE=LOCK_PAST?' · <b style=&quot;color:#d33&quot;>Tanggal sebelum hari ini terkunci</b>':'';
 const toast=(t,ms=2500)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',ms);};
 
@@ -967,7 +968,8 @@ function paintCell(td){
 function paintTot(no){const {u}=cur();let t=0;Object.values(DRAFT[no]||{}).forEach(v=>t+=hours(u,v));
  const c=$('frm').querySelector(`td.j[data-n=&quot;${CSS.escape(no)}&quot;]`);if(c)c.textContent=t||'';}
 function openForm(){
- const {y,m,u}=cur();if(!LIST.length)return;const n=days(y,m);
+ const {y,m,u}=cur();if(!LIST.length)return;
+ if(periodLocked(y,m))return toast('Periode '+BLN[m-1]+' '+y+' sudah lewat — terkunci, tidak bisa input / revisi',4000);const n=days(y,m);
  DRAFT={};Object.keys(ENT).forEach(no=>DRAFT[no]={...ENT[no]});DRAFTA={};Object.keys(ALS).forEach(no=>DRAFTA[no]={...ALS[no]});DIRTY=false;SEL=null;
  const rev=Object.values(ENT).some(o=>Object.keys(o).length);
  $('mt').textContent=`${rev?'Revisi':'Input'} Rekap Lembur — ${u} — ${BLN[m-1]} ${y}`;
@@ -1518,7 +1520,8 @@ function paintCellA(td){
 function paintTotA(no){let t=0;Object.values(DRAFTB[no]||{}).forEach(v=>{t+=hadirN(v);});
  const c=$('afrm').querySelector(`td.j[data-n=&quot;${CSS.escape(no)}&quot;]`);if(c)c.textContent=t||'';}
 function openFormA(){
- const {y,m,u}=curA();if(!LISTA.length)return;const n=days(y,m);
+ const {y,m,u}=curA();if(!LISTA.length)return;
+ if(periodLocked(y,m))return toast('Periode '+BLN[m-1]+' '+y+' sudah lewat — terkunci, tidak bisa input / revisi',4000);const n=days(y,m);
  DRAFTB={};Object.keys(ENTA).forEach(no=>DRAFTB[no]={...ENTA[no]});DRAFTK={};Object.keys(KETA).forEach(no=>DRAFTK[no]={...KETA[no]});DIRTY=false;SELA=null;
  const rev=Object.values(ENTA).some(o=>Object.keys(o).length);
  $('amt').textContent=`${rev?'Revisi':'Input'} Absensi — ${u} — ${BLN[m-1]} ${y}`;
@@ -1902,7 +1905,7 @@ select option{background:var(--pan-solid);color:var(--ink)}
 .day.w b,.day.w small{color:var(--vio)}
 .day.c b,.day.c small{color:var(--amb)}
 .day.h b,.day.h small{color:var(--red)}
-.day:hover:not(.sel):not(.lock):not(.off):not(.oth){border-color:var(--mint2);background:var(--hov)}
+.day:hover:not(.sel):not(.lock):not(.off):not(.oth):not(.past){border-color:var(--mint2);background:var(--hov)}
 .day.oth{opacity:.35;cursor:default}
 .day.today b{background:var(--g-mint);color:var(--on-mint)!important}
 .day.off{background:repeating-linear-gradient(135deg,var(--hatch-a) 0 6px,var(--hatch-b) 6px 12px);cursor:not-allowed}
@@ -1912,6 +1915,9 @@ select option{background:var(--pan-solid);color:var(--ink)}
 .day.off.h b,.day.off.h small{color:var(--red)}
 .day.off.c{background:repeating-linear-gradient(135deg,rgba(246,199,104,.07) 0 6px,rgba(246,199,104,.18) 6px 12px)}
 .day.off.c b,.day.off.c small{color:var(--amb)}
+.day.past{opacity:.55;background:repeating-linear-gradient(135deg,var(--hatch-a) 0 6px,var(--hatch-b) 6px 12px);cursor:not-allowed}
+.day.past b,.day.past small{color:var(--mut)}
+.day.past.today b{color:var(--on-mint)}
 .day.lock{background:rgba(255,107,129,.12);border-color:rgba(255,107,129,.5);cursor:not-allowed}
 .day.lock b,.day.lock small{color:var(--red)}
 .day.sel{background:var(--g-vio);border-color:transparent;box-shadow:0 6px 16px rgba(100,64,250,.4)}
@@ -2033,6 +2039,7 @@ tr.pick td{background:rgba(0,143,199,.2)}
   .day.h::after{background:var(--red)}
   .day.c::after{background:var(--amb)}
   .day.sel.h::after,.day.sel.c::after{background:#fff}
+  .day.past::after{content:&quot;🔒&quot;;width:auto;height:auto;font-size:9px;line-height:1;margin-left:-6px;bottom:3px;background:none}
   .day.lock::after{content:&quot;🔒&quot;;width:auto;height:auto;font-size:9px;line-height:1;margin-left:-6px;bottom:3px;background:none}
   .day.oth::after{display:none}
   .leg .tot{margin-left:0;width:100%}
@@ -2207,6 +2214,12 @@ const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
 /* ================== STATE ================== */
 const now=new Date();
+/* ===== MODE INPUT PERIODE LAMPAU =====
+   true  = tanggal sebelum hari ini TERKUNCI (tidak bisa dipilih)  -> versi &quot;Kunci Lampau&quot;
+   false = tanggal lampau (backdate) masih bisa dipilih            -> versi &quot;Backdate&quot; */
+const LOCK_PAST=false;
+const today0=()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())};
+const isPast=k=>LOCK_PAST&amp;&amp;dt(k)<today0();
 const S={sel:new Set(),view:{y:now.getFullYear(),m:now.getMonth()},people:[],ttd:[],ket:[],remote:[],local:lsGet('cuti_rekap_v1',[]),p:null,ev:[],demo:false,fUnit:'',charts:{}};
 
 /* ================== DATA SHEET ================== */
@@ -2226,7 +2239,7 @@ function mapRows({h,rows},spec){
 }
 const SPEC_P={nama:['nama','namapetugas','namalengkap','petugas','namapegawai'],noinduk:['noinduk','nip','induk','nik','noindukpegawai','noindukkaryawan'],jabatan:['jabatan'],divisi:['divisi','bagian','seksi'],unit:['unit','penempatan','lokasi','unitkerja'],shift:['shift','statusshift','polakerja','jeniskerja','jenis','status','kategori','jamkerja','shiftnonshift','statuskerja','kategorishift'],gender:['jeniskelamin','jk','gender','kelamin','lp','sex','lakilakiperempuan']};
 const SPEC_T={divisi:['unit','divisi','unitkerja','penempatan'],t1:['ttd1'],u1:['unitttd1'],t2:['ttd2'],u2:['unitttd2'],t3:['ttd3'],u3:['unitttd3'],t4:['ttd4'],u4:['unitttd4']};
-const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
+const SPEC_R={nomor:['nomor','nosurat','nomorsurat'],tglAjuan:['tglpengajuan','tanggalpengajuan'],nama:['nama','namapetugas','petugas'],noinduk:['noinduk','nip','nomorinduk'],unit:['unit','penempatan'],divisi:['divisi'],ket:['keterangan','keterangancuti','ketcuti','jeniscuti'],jumlah:['jumlah','jumlahhari','jumlahcuti','durasi','durasicutihari','durasicuti','totalhari'],mulai:['mulai','tanggalmulai','tanggalmulaicuti','tglmulai'],selesai:['selesai','tanggalselesai','tanggalberakhircuti','tglselesai','berakhir']};
 
 // Normalisasi kategori dari sheet tenaga_kerja: 'Shift' / 'Non Shift' / 'Non-Shift' / 'NS' dst.
 const polaOf=v=>{const n=N(v);if(!n)return'';if(/^(ns|nonshift|noshift|tidakshift|reguler|regular|normal|harian|office)/.test(n)||n.includes('non'))return'Nonshift';if(n=='s'||n.includes('shift'))return'Shift';return''};
@@ -2284,7 +2297,8 @@ function fillKet(){
   $('#fKet').innerHTML=CUTI.filter(c=>!c.g||c.g==g).map(c=>{const nm=S.ket.find(k=>ruleOf(k)===c)||c.name,us=ketUsed(c);return `<option value=&quot;${esc(nm)}&quot;${us?' disabled':''}>${esc(nm)}${us?' (sudah pernah diajukan)':''}</option>`}).join('');
   evRender();
 }
-function ketUsed(c){return !!S.p&amp;&amp;c.id!='tahunan'&amp;&amp;all().some(r=>N(r.nama)==N(S.p.nama)&amp;&amp;(ruleOf(r.ket)||{}).id==c.id)}
+const samePers=r=>(r.noinduk&amp;&amp;S.p.noinduk)?N(r.noinduk)==N(S.p.noinduk):N(r.nama)==N(S.p.nama);
+function ketUsed(c){return !!S.p&amp;&amp;c.id!='tahunan'&amp;&amp;all().some(r=>samePers(r)&amp;&amp;(ruleOf(r.ket)||{}).id==c.id)}
 // Segarkan status &quot;sudah diajukan&quot; tanpa mengubah pilihan yang masih sah (dipanggil setelah sinkron rekap)
 function refreshKet(){
   const cv=$('#fKet').value;fillKet();
@@ -2413,6 +2427,7 @@ function locked(d){const t=new Set(S.sel);t.add(iso(d));return !validShift(t)}
 function status(d){
   const k=iso(d);
   if(S.sel.has(k))return'sel';
+  if(isPast(k))return'past';
   if(isCal())return'ok';
   if(!shift()){const wk=d.getDay()==0||d.getDay()==6;if(wk||hday(k))return'off';return'ok'}
   return locked(d)?'lock':'ok';
@@ -2428,12 +2443,13 @@ function renderCal(){
     const d=add(start,i),k=iso(d),oth=d.getMonth()!=m,st=status(d),wk=d.getDay()==0||d.getDay()==6;
     if(!oth){if(st=='lock')lk++;if(st=='off')off++}
     const hd=hday(k),tp=hd?hd[1]:'',cls=['day',oth?'oth':'',wk?'w':'',tp=='n'?'h':tp?'c':'',k==iso(new Date())?'today':'',st=='ok'?'':st].join(' ');
-    const lab=st=='sel'?'Cuti':st=='lock'?'🔒 Lock':hd?({n:'Libur Nas.',c:'Cuti Bersama',f:'Fakultatif'})[tp]:(st=='off'||wk)?'Akhir pekan':'Buka';
+    const lab=st=='sel'?'Cuti':st=='past'?'🔒 Lewat':st=='lock'?'🔒 Lock':hd?({n:'Libur Nas.',c:'Cuti Bersama',f:'Fakultatif'})[tp]:(st=='off'||wk)?'Akhir pekan':'Buka';
     h+=`<div class=&quot;${cls}&quot; data-k=&quot;${k}&quot; title=&quot;${esc(hd?hd[0]:'')}&quot;><b>${d.getDate()}</b><small>${lab}</small></div>`;
   }
   $('#cal').innerHTML=h;
   const pre=y+'-'+p2(m+1),hm=holMap(y),hl=Object.keys(hm).filter(k=>k.startsWith(pre)).sort().map(k=>`<b>${dt(k).getDate()} ${BS[m]}</b> ${esc(hm[k][0])}${hm[k][1]=='f'?' (fakultatif)':''}`);
   $('#holList').innerHTML='Libur &amp;amp; cuti bersama '+BLN[m]+' (kebijakan '+provOf(S.p)+'): '+(hl.length?hl.join(' · '):'tidak ada')+(isCal()?' <i>('+esc(rule().name)+' dihitung '+rule().q+' hari kalender; libur &amp;amp; akhir pekan ikut terhitung)</i>':shift()?' <i>(tetap bisa dipilih untuk shift)</i>':' <i>(tidak bisa dipilih untuk nonshift)</i>')+(holPartial(y)?'<br>⚠ Libur keagamaan &amp;amp; cuti bersama '+y+(HOLP[y]?' sedang diambil…':' belum tersedia (hanya libur tetap yang tampil); isi lewat HOLX di kode.'):'');
+  if(LOCK_PAST)$('#holList').insertAdjacentHTML('beforeend','<br>🔒 <b>Tanggal sebelum hari ini terkunci</b> dan tidak bisa dipilih.');
   $('#lkN').textContent=lk;$('#lkLeg').style.display=shift()&amp;&amp;!isCal()?'':'none';
   $('#offLeg').style.display=shift()||isCal()?'none':'';
   $('#tot').innerHTML=`Total terpilih: ${S.sel.size} hari ${isCal()?'kalender':'kerja'} <small>(maks. ${limit()} hari)</small>`;
@@ -2442,6 +2458,7 @@ function renderCal(){
 }
 function trySel(d,quiet){
   const k=iso(d),st=status(d);
+  if(st=='past'){if(!quiet)toast('Tanggal sebelum hari ini terkunci dan tidak bisa dipilih.');return false}
   if(st=='lock'){if(!quiet)toast('Shift: maksimal 6 hari berturut-turut, lalu 2 hari berikutnya tidak bisa dipilih.');return false}
   if(st=='off'){if(!quiet)toast('Nonshift: Sabtu, Minggu, libur nasional, cuti bersama, dan libur fakultatif tidak bisa dipilih.');return false}
   if(S.sel.size>=limit()){if(!quiet)toast(`Maksimal ${limit()} hari cuti.`);return false}
@@ -2451,6 +2468,7 @@ $('#cal').addEventListener('click',e=>{
   const c=e.target.closest('.day');if(!c||c.classList.contains('oth'))return;
   const k=c.dataset.k;
   if(isCal()){
+    if(isPast(k)){toast('Tanggal sebelum hari ini terkunci dan tidak bisa dipilih.');return}
     const R=rule(),MLH=R.q;
     if(R.g&amp;&amp;(!S.p||S.p.gender!=R.g)){toast(R.name+' hanya untuk petugas '+(R.g=='P'?'perempuan':'laki-laki')+'.');return}
     if(S.sel.size&amp;&amp;[...S.sel].sort()[0]==k){S.sel.clear();renderCal();return}
@@ -2536,6 +2554,7 @@ function buildRec(){
   if(ketUsed(rule())){toast(rule().name+' sudah pernah diajukan oleh petugas ini; jatah berlaku per pengajuan.');return null}
   if(needEv()&amp;&amp;!S.ev.length){toast('Upload eviden terlebih dahulu untuk '+rule().name+'.');return null}
   if(!S.sel.size){toast('Pilih minimal satu tanggal cuti pada kalender.');return null}
+  if(LOCK_PAST&amp;&amp;[...S.sel].some(isPast)){S.sel.clear();renderCal();toast('Ada tanggal yang sudah lewat dan terkunci. Pilih ulang tanggal cuti.');return null}
   const tgl=iso(new Date()),dates=[...S.sel].sort(),jumlah=dates.length,tah=isTahunan(),u=used(S.p,dt(dates[0]).getFullYear());
   return{id:Date.now(),nomor:'',nama:S.p.nama,noinduk:S.p.noinduk,jabatan:S.p.jabatan,divisi:S.p.divisi,unit:S.p.unit,pola:$('#fPola').value,ket:$('#fKet').value,dates,mulai:dates[0],selesai:dates[dates.length-1],jumlah,lamanya:lam({mulai:dates[0],selesai:dates[dates.length-1]}),tglAjuan:tgl,sisa:Math.max(0,JATAH-u-(tah?jumlah:0)),ttd:ttdFor(S.p),ev:S.ev.slice()};
 }
